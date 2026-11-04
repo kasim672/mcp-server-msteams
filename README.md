@@ -69,14 +69,14 @@
 
 ### Instant Run via NPX
 
-Run the server or CLI without installing anything locally:
+Run the CLI via NPX without installing anything locally:
 
 ```bash
 # Check status and current connection
-npx -y mcp-server-msteams msteams status
+npx -y -p mcp-server-msteams msteams status
 
 # Sign in to your Microsoft Teams account (opens browser once)
-npx -y mcp-server-msteams msteams teams_login
+npx -y -p mcp-server-msteams msteams teams_login
 ```
 
 ### MCP Client Configuration
@@ -416,7 +416,7 @@ npm publish
 
 Once published, anyone can use it instantly:
 ```bash
-npx -y mcp-server-msteams msteams status
+npx -y -p mcp-server-msteams msteams status
 ```
 
 ---
