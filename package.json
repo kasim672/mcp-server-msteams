@@ -1,0 +1,62 @@
+{
+  "name": "mcp-server-msteams",
+  "version": "1.0.0",
+  "description": "Microsoft Teams MCP Server with Assignment Automation, file attachments, and turn-in capabilities",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-server-msteams": "dist/index.js",
+    "msteams": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kasim672/mcp-server-msteams.git"
+  },
+  "homepage": "https://github.com/kasim672/mcp-server-msteams#readme",
+  "bugs": {
+    "url": "https://github.com/kasim672/mcp-server-msteams/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "cli": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
+  },
+  "keywords": [
+    "mcp",
+    "microsoft-teams",
+    "assignments",
+    "playwright",
+    "browser-automation"
+  ],
+  "author": "Kasim Ghanchi",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "marked": "^18.0.14",
+    "playwright": "^1.40.0",
+    "zod": "~3.23.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^20.10.0",
+    "eslint": "^9.39.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.53.1",
+    "vitest": "^4.0.18"
+  }
+}
