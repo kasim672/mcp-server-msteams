@@ -30,6 +30,7 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../constants.js';
 
 export const ListAssignmentsInputSchema = z.object({
   statusFilter: z.enum(['active', 'completed', 'all']).optional().default('active'),
+  status: z.enum(['active', 'completed', 'all']).optional(),
   nextLink: z.string().url().optional(),
   top: z.number().int().min(1).max(MAX_PAGE_SIZE).optional().default(DEFAULT_PAGE_SIZE),
 });
@@ -209,7 +210,7 @@ async function handleListAssignments(
   input: z.infer<typeof ListAssignmentsInputSchema>
 ): Promise<ToolResult> {
   const result = await listMyAssignments({
-    statusFilter: input.statusFilter,
+    statusFilter: input.status ?? input.statusFilter,
     top: input.top,
     nextLink: input.nextLink,
   });

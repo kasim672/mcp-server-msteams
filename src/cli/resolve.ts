@@ -29,6 +29,7 @@ export const FLAG_ALIASES: Record<string, string> = {
   replyTo: 'replyToMessageId',
   user: 'userId',
   force: 'forceNew',
+  status: 'statusFilter',
 };
 
 /** Flags accepted for every command. */
