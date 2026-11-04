@@ -299,8 +299,14 @@ sudo dnf install -y nodejs git
 sudo pacman -S nodejs npm git
 ```
 
-#### 2. Install a Browser
-`mcp-server-msteams` uses your system browser, saving ~180MB of bundled browser downloads. Install any of the following:
+#### 2. Install or Use Your Default Browser
+`mcp-server-msteams` **automatically detects your system's default browser** directly from your operating system settings (via `xdg-settings` on Linux, `UserChoice` registry on Windows, or AppleScript on macOS).
+
+It coordinates with:
+- **Chromium-based**: Google Chrome, Microsoft Edge, Brave, Opera, Vivaldi, Chromium
+- **Non-Chromium**: Mozilla Firefox (uses dedicated `browser-profile-firefox` session with automated fallback to Chromium if remote debugging protocol is unavailable)
+
+If you don't already have a browser installed on Linux, install any of the following:
 
 ```bash
 # Option A: Google Chrome (Ubuntu / Debian)
@@ -312,10 +318,13 @@ sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://b
 echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
 sudo apt update && sudo apt install -y brave-browser
 
-# Option C: Chromium (Ubuntu / Debian)
+# Option C: Mozilla Firefox (Ubuntu / Debian)
+sudo apt install -y firefox
+
+# Option D: Chromium (Ubuntu / Debian)
 sudo apt install -y chromium-browser
 
-# Option D: Microsoft Edge (Ubuntu / Debian)
+# Option E: Microsoft Edge (Ubuntu / Debian)
 curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
 sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
 sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge-dev.list'
@@ -333,7 +342,7 @@ cd mcp-server-msteams
 npm install
 npm run build
 
-# 3. Run unit tests (559 tests)
+# 3. Run unit tests (574 tests)
 npm test
 
 # 4. Sign in to Teams (opens browser GUI)
@@ -349,7 +358,7 @@ Configure optional overrides in your `~/.bashrc` or `~/.zshrc`:
 
 | Variable | Description | Example |
 | :--- | :--- | :--- |
-| `TEAMS_BROWSER` | Explicitly choose browser engine (`brave`, `chrome`, `edge`, `chromium`). | `export TEAMS_BROWSER=brave` |
+| `TEAMS_BROWSER` | Explicitly choose browser engine (`chrome`, `edge`, `brave`, `firefox`, `chromium`). Defaults to auto-detecting system default browser. | `export TEAMS_BROWSER=firefox` |
 | `TEAMS_BROWSER_PATH`| Absolute path to custom browser executable. | `export TEAMS_BROWSER_PATH=/usr/bin/google-chrome` |
 | `LOG_LEVEL` | Logging verbosity (`debug`, `info`, `warn`, `error`). | `export LOG_LEVEL=debug` |
 
