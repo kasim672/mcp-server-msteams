@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181825"/>
+      <stop offset="100%" stop-color="#11111b"/>
+    </linearGradient>
+    <filter id="fShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="920" height="260" fill="#0b0f19" rx="16"/>
+
+  <!-- Card 1 -->
+  <g transform="translate(24, 20)" filter="url(#fShadow)">
+    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#6366f1" stroke-width="1.2"/>
+    <circle cx="44" cy="44" r="20" fill="#312e81"/>
+    <text x="44" y="50" fill="#a5b4fc" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F512;</text>
+    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">Zero Azure Config</text>
+    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
+      <tspan x="24" dy="0">&#x2022; No IT admin consent or Azure portal setup.</tspan>
+      <tspan x="24" dy="20">&#x2022; Standard Microsoft Teams login credentials.</tspan>
+      <tspan x="24" dy="20">&#x2022; Silent HTTP 1s OAuth token refresh daemon.</tspan>
+      <tspan x="24" dy="20">&#x2022; Local AES-256-GCM encrypted session.</tspan>
+    </text>
+  </g>
+
+  <!-- Card 2 -->
+  <g transform="translate(324, 20)" filter="url(#fShadow)">
+    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#06b6d4" stroke-width="1.2"/>
+    <circle cx="44" cy="44" r="20" fill="#083344"/>
+    <text x="44" y="50" fill="#67e8f9" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F393;</text>
+    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">EDU Assignments</text>
+    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
+      <tspan x="24" dy="0">&#x2022; List active, pending &amp; past assignments.</tspan>
+      <tspan x="24" dy="20">&#x2022; Download assignment briefs and resources.</tspan>
+      <tspan x="24" dy="20">&#x2022; Playwright headless file attachment upload.</tspan>
+      <tspan x="24" dy="20">&#x2022; Automated turn-in &amp; unsubmit support.</tspan>
+    </text>
+  </g>
+
+  <!-- Card 3 -->
+  <g transform="translate(624, 20)" filter="url(#fShadow)">
+    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#10b981" stroke-width="1.2"/>
+    <circle cx="44" cy="44" r="20" fill="#064e3b"/>
+    <text x="44" y="50" fill="#6ee7b7" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F427;</text>
+    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">Linux &amp; Windows Ready</text>
+    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
+      <tspan x="24" dy="0">&#x2022; Auto-detects Chrome, Brave, Edge &amp; Chromium.</tspan>
+      <tspan x="24" dy="20">&#x2022; Works on Ubuntu, Debian, Fedora, Arch &amp; Win.</tspan>
+      <tspan x="24" dy="20">&#x2022; Single binary MCP Server &amp; CLI bundled.</tspan>
+      <tspan x="24" dy="20">&#x2022; 100% test coverage (559/559 passing).</tspan>
+    </text>
+  </g>
+</svg>

@@ -1,41 +1,90 @@
-# Microsoft Teams MCP Server & CLI
+<div align="center">
+
+<img src="assets/banner.jpg" alt="mcp-server-msteams Banner" width="100%" />
+
+# Microsoft Teams MCP Server &amp; CLI
+
+**Seamless AI Assistant Integration, EDU Assignment Automation &amp; Standalone CLI for Microsoft Teams**
 
 [![CI](https://github.com/kasim672/mcp-server-msteams/actions/workflows/ci.yml/badge.svg)](https://github.com/kasim672/mcp-server-msteams/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/mcp-server-msteams.svg)](https://www.npmjs.com/package/mcp-server-msteams)
-[![npm downloads](https://img.shields.io/npm/dm/mcp-server-msteams.svg)](https://www.npmjs.com/package/mcp-server-msteams)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
+[![Linux Supported](https://img.shields.io/badge/Linux-Ubuntu%20%7C%20Debian%20%7C%20Fedora%20%7C%20Arch-orange.svg)](#linux-dual-boot--setup-guide)
+[![Windows Supported](https://img.shields.io/badge/Windows-10%20%7C%2011-blue.svg)](#windows-setup-guide)
 
-Give AI access to Microsoft Teams easily with your standard Teams login. 
+<br/>
 
-> ### No Azure setup, app registration, Graph permissions or IT support required.
-Search messages and email, catch up on unread chats, read threads, send replies, retrieve meeting transcripts and more.
+<img src="assets/features-overview.svg" alt="Feature Overview" width="100%" />
 
+</div>
 
-## Why msteams-mcp?
+---
 
-- **Do real work** - search, unread chats, threads, replies, people, channels, meetings, transcripts, files, reactions, and assignments on education tenants.
-- **Sign in once** - tokens refresh automatically and the browser stays out of routine operations.
-- **Secure** - the assistant has only your existing Teams permissions, with encrypted session data stored locally.
-- **Use it anywhere** - every capability works through both MCP clients and the included `msteams` CLI.
+## Table of Contents
 
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+  - [Instant Run via NPX](#instant-run-via-npx)
+  - [MCP Client Configuration (Claude Desktop, Cursor, Windsurf, Zed)](#mcp-client-configuration)
+- [Architecture &amp; Design](#architecture--design)
+- [Live Terminal CLI](#live-terminal-cli)
+- [Complete Tool Catalog](#complete-tool-catalog)
+  - [1. Authentication &amp; Session](#1-authentication--session)
+  - [2. EDU Assignments Automation](#2-edu-assignments-automation)
+  - [3. Messaging &amp; Conversations](#3-messaging--conversations)
+  - [4. Search &amp; Discovery](#4-search--discovery)
+  - [5. Files, Meetings &amp; Transcripts](#5-files-meetings--transcripts)
+  - [6. People &amp; Directory](#6-people--directory)
+- [Linux Dual-Boot &amp; Setup Guide](#linux-dual-boot--setup-guide)
+  - [Prerequisites &amp; Browser Installation](#prerequisites--browser-installation)
+  - [Cloning &amp; Local Verification](#cloning--local-verification)
+  - [Environment Variables](#environment-variables)
+- [Windows Setup Guide](#windows-setup-guide)
+- [Step-by-Step Assignment Workflow](#step-by-step-assignment-workflow)
+- [Development &amp; Testing](#development--testing)
+- [Publishing to NPM](#publishing-to-npm)
+- [Security &amp; Privacy](#security--privacy)
+- [Troubleshooting &amp; FAQ](#troubleshooting--faq)
+- [License](#license)
 
+---
 
-## Quick start
+## Overview
 
+**`mcp-server-msteams`** gives Large Language Models (Claude, GPT, Gemini, DeepSeek) and developers programmatic, real-time access to Microsoft Teams. 
 
+### Why Choose `mcp-server-msteams`?
 
-### Prerequisites
+- 🚀 **Zero Azure Setup**: No Azure App Registrations, no IT admin consent, and no custom API permissions required. Simply sign in using your existing standard Teams account.
+- ⚡ **Silent 1-Second HTTP Refresh**: Automatically extracts and refreshes MSAL OAuth tokens via fast HTTPS endpoints in the background. The browser only opens for the initial login or when session cookies completely expire.
+- 🎓 **First-Class EDU Assignments**: Automate listing coursework, downloading assignments briefs, attaching local submissions (`.pdf`, `.docx`, `.zip`), and executing turn-in / unsubmit actions.
+- 🐧 **Full Linux &amp; Windows Parity**: Native cross-platform engine auto-detects Google Chrome, Brave, Microsoft Edge, and Chromium across distributions without hardcoded OS paths.
+- 🛡️ **End-to-End Local Security**: Session tokens are encrypted on disk with **AES-256-GCM** using machine-derived cryptographic keys. Your credentials never touch third-party servers.
+- 🛠️ **Dual Interface**: Includes both an **MCP stdio server** for AI clients and the standalone **`msteams` CLI** for bash/zsh/PowerShell scripts.
 
-- Node.js 20+
-- A Microsoft account with Teams access
-- Google Chrome, Microsoft Edge, or Chromium browser installed
+---
 
+## Quick Start
 
+### Instant Run via NPX
 
-### Configure your MCP client
+Run the server or CLI without installing anything locally:
 
-Add to your MCP client configuration (e.g., Claude Desktop, Windsurf, Cursor):
+```bash
+# Check status and current connection
+npx -y mcp-server-msteams msteams status
+
+# Sign in to your Microsoft Teams account (opens browser once)
+npx -y mcp-server-msteams msteams teams_login
+```
+
+### MCP Client Configuration
+
+Add `mcp-server-msteams` to your AI client configuration file:
+
+#### Claude Desktop
+Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/.config/Claude/claude_desktop_config.json` (Linux/macOS):
 
 ```json
 {
@@ -48,345 +97,364 @@ Add to your MCP client configuration (e.g., Claude Desktop, Windsurf, Cursor):
 }
 ```
 
-That is it. `npx` downloads and runs the latest version. Ask your assistant to call `teams_login` once, complete the normal Microsoft sign-in in the browser, and then start using Teams.
-
-## How it works
-
-This server calls Microsoft's Teams services directly (Substrate, chatsvc, CSA), using the authenticated session created by the Teams web app.
-
-1. `teams_login` opens a browser for your normal Microsoft sign-in.
-2. The resulting OAuth tokens and session data are encrypted and cached locally.
-3. Routine operations use those tokens directly, without browser automation.
-4. Expiring tokens are refreshed automatically over HTTP, with headless browser SSO as a fallback.
-
-Your access remains limited to what your Teams account can already see and do.
-
-### From Source (alternative)
-
-If you prefer to run from a local clone:
-
-```bash
-git clone https://github.com/kasim672/mcp-server-msteams.git
-cd mcp-server-msteams
-npm install && npm run build
-```
-
-Then configure your MCP client:
-
-```json
-{
-  "mcpServers": {
-    "teams": {
-      "command": "node",
-      "args": ["/path/to/msteams-mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-The server uses your system's Chrome (macOS/Linux) or Edge (Windows) for authentication.
-
-### CLI
-
-The same functionality is also available as a standalone command-line tool, `msteams`. This is useful when you want Teams from a shell or script instead of an MCP client.
-
-Install it globally from npm:
-
-```bash
-npm install -g mcp-server-msteams
-```
-
-This installs two binaries: `msteams-mcp` (the MCP server) and `msteams` (the CLI wrapper). Or run it without installing:
-
-```bash
-npx -y mcp-server-msteams msteams status
-```
-
-See [CLI Usage](#cli-usage) for commands, or run `msteams` for the command list.
-
-## Available Tools
-
-
-
-### Search & Discovery
-
-
-| Tool                 | Description                                                                                                                                           |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `teams_search`       | Search Teams messages with operators (`from:`, `sent:`, `in:`, `hasattachment:`, etc.)                                                                |
-| `teams_search_email` | Search emails in your mailbox (same auth as Teams - no extra login)                                                                                   |
-| `teams_list_chats`   | List recent conversations (1:1, group, meeting, channel) with a last-message preview                                                                  |
-| `teams_get_message`  | Get a single message by ID with full content (any age); includes reactions                                                                            |
-| `teams_get_thread`   | Get messages from a conversation/thread; includes reactions; `threadRootId` scopes to one channel thread; `fromUrl` accepts a Teams message deep link; `cursor` pages back through older history |
-| `teams_find_channel` | Find channels by name (your teams + org-wide discovery)                                                                                               |
-| `teams_get_tags`     | List a team's channel tags for tag @mentions                                                                                                          |
-| `teams_get_activity` | Get activity feed (mentions, reactions, replies, notifications)                                                                                       |
-
-
-
-
-### Messaging
-
-
-| Tool                   | Description                                                                                                                                                                                                           |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `teams_send_message`   | Send a message (default: self-chat/notes). `replyToMessageId` for thread replies, `subject` for a new channel thread, `scheduleAt` to schedule, `contentType` (`auto`/`text`/`html`/`markdown`) to control formatting |
-| `teams_wait_for_reply` | Block until a new message arrives (server-side poll, capped ~110s); idempotent `after`/`nextAfter` cursor - pair with `teams_send_message`                                                                            |
-| `teams_edit_message`   | Edit one of your own messages (`contentType` supported)                                                                                                                                                               |
-| `teams_delete_message` | Delete one of your own messages (soft delete)                                                                                                                                                                         |
-
-
-
-
-### People & Contacts
-
-
-| Tool                          | Description                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------------ |
-| `teams_get_me`                | Get current user profile (email, name, ID)                                     |
-| `teams_search_people`         | Search for people by name or email                                             |
-| `teams_get_frequent_contacts` | Get frequently contacted people (useful for name resolution)                   |
-| `teams_get_person`            | Resolve one or more MRIs to full profiles (name, email, job title, department) |
-| `teams_get_chat`              | Get conversation ID for 1:1 chat with a person                                 |
-| `teams_create_group_chat`     | Create a new group chat with multiple people (2+ others)                       |
-
-
-
-
-### Organisation
-
-
-| Tool                         | Description                                                  |
-| ---------------------------- | ------------------------------------------------------------ |
-| `teams_get_favorites`        | Get pinned/favourite conversations                           |
-| `teams_add_favorite`         | Pin a conversation                                           |
-| `teams_remove_favorite`      | Unpin a conversation                                         |
-| `teams_save_message`         | Bookmark a message                                           |
-| `teams_unsave_message`       | Remove bookmark from a message                               |
-| `teams_get_saved_messages`   | Get list of saved/bookmarked messages with source references |
-| `teams_get_followed_threads` | Get list of followed threads with source references          |
-| `teams_get_unread`           | Get unread counts (aggregate or per-conversation)            |
-| `teams_mark_read`            | Mark a conversation as read up to a message                  |
-
-
-
-
-### Reactions
-
-
-| Tool                    | Description                                              |
-| ----------------------- | -------------------------------------------------------- |
-| `teams_search_emoji`    | Search for emojis by name (standard + custom org emojis) |
-| `teams_add_reaction`    | Add an emoji reaction to a message                       |
-| `teams_remove_reaction` | Remove an emoji reaction from a message                  |
-
-
-**Quick reactions:** `like`, `heart`, `laugh`, `surprised`, `sad`, `angry` can be used directly without searching.
-
-### Calendar & Meetings
-
-
-| Tool                   | Description                                                            |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `teams_get_meetings`   | Get meetings from calendar (defaults to next 7 days)                   |
-| `teams_get_transcript` | Get meeting transcript (requires `threadId` from `teams_get_meetings`) |
-
-
-`teams_get_meetings` returns: subject, times, organiser, join URL, `threadId` for meeting chat. Use `threadId` with `teams_get_thread` to read meeting chat, or with `teams_get_transcript` to get the full transcript with speakers and timestamps.
-
-### Files
-
-
-| Tool                     | Description                                                        |
-| ------------------------ | ------------------------------------------------------------------ |
-| `teams_get_shared_files` | Get files and links shared in a conversation (supports pagination) |
-| `teams_download_file`    | Download a shared file or assignment attachment to a local path    |
-
-
-`teams_get_shared_files` returns both files (name, extension, URL, size) and links (URL, title), along with who shared each item. Works for channels, group chats, 1:1 chats, and meeting chats.
-
-`teams_download_file` takes a file's `webUrl` from `teams_get_shared_files`, or an attachment's `fileUrl` from `teams_get_assignment`. It downloads through Microsoft Graph using the Teams client's own access, so no extra sign-in is needed. Files stream straight to disk, never overwrite an existing file, and are removed if the download fails part-way. Links and Microsoft Forms aren't files and can't be downloaded.
-
-### Assignments (education tenants only)
-
-
-| Tool                      | Description                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------------------------------- |
-| `teams_list_assignments`  | List your assignments across classes (`active`, `completed` or `all`), with due dates, grades and your submission state |
-| `teams_get_assignment`    | Get one assignment's full detail, including instructions, attachments and your submission (with your own copies of files) |
-| `teams_submission_action` | Turn in, undo turn-in, or mark viewed on your own submission                                   |
-| `teams_attach_file`       | Attach a local file from your machine to an assignment submission (with optional turn-in)      |
-| `teams_remove_attachment` | Remove an attached file from an unsubmitted / working assignment submission                  |
-
-
-Assignments is optional. It only works on education tenants that use Teams Assignments, and its token is requested separately, on demand, so other accounts pay no extra cost. If Assignments isn't available, or its authorisation fails, only these tools return an error: the rest of Teams keeps working, and no browser or re-login is triggered.
-
-Download attachments (Word, PowerPoint and other files) with `teams_download_file`. Microsoft Forms quizzes and links are returned as URLs instead.
-
-### Session
-
-
-| Tool           | Description                            |
-| -------------- | -------------------------------------- |
-| `teams_login`  | Trigger manual login (opens browser)   |
-| `teams_status` | Check authentication and session state |
-
-
-
-
-### Search Operators
-
-Both `teams_search` (Teams messages) and `teams_search_email` (emails) support native operators:
-
-```
-from:sarah@company.com     # Messages/emails from person
-sent:2026-01-20            # From specific date
-sent:>=2026-01-15          # Since date
-in:project-alpha           # Messages in channel (Teams only)
-subject:"budget"           # By subject (email)
-"Rob Smith"                # Find @mentions (name in quotes)
-hasattachment:true         # With files
-is:unread                  # Unread emails (email only)
-NOT from:email@co.com      # Exclude results
-```
-
-Combine operators: `from:sarah@co.com sent:>=2026-01-18 hasattachment:true`
-
-**Note:** `@me`, `from:me`, `to:me` do NOT work. Use `teams_get_me` first to get your email/displayName. `sent:today` works, but `sent:lastweek` and `sent:thisweek` do NOT - use explicit dates or omit (results are sorted by recency).
-
-## MCP Resources
-
-The server also exposes passive resources for context discovery:
-
-
-| Resource URI           | Description            |
-| ---------------------- | ---------------------- |
-| `teams://me/profile`   | Current user's profile |
-| `teams://me/favorites` | Pinned conversations   |
-| `teams://status`       | Authentication status  |
-
-
-
-
-## CLI Usage
-
-`msteams` exposes every tool the MCP server does - full parity, same authentication, same session files. Commands, flags and help are generated from the tool definitions, so the CLI never lags behind the server.
-
-If you installed globally (`npm install -g mcp-server-msteams`), invoke it directly:
-
-```bash
-# The command list, one line each
-msteams
-msteams --version
-
-# What one command does, and all of its flags
-msteams help send_message
-msteams search --help
-
-# Check authentication status
-msteams status
-
-# Log in (opens a browser; tries silent SSO first)
-msteams login
-msteams login --force        # clear session and re-login
-
-# Search messages
-msteams search "meeting notes"
-msteams search "project" --from 0 --size 50
-
-# Search emails
-msteams email "from:sarah@company.com"
-
-# Send a message (default: your own self-chat, 48:notes)
-msteams send "Hello from Teams MCP!"
-msteams send "Message" --to "conversation-id"
-
-# People, contacts, favourites, activity, unread
-msteams people "john smith"
-msteams favorites
-msteams activity
-msteams unread
-
-# Machine-readable output, on stdout, for scripts
-msteams search "query" --json | jq '.results[0].conversationId'
-```
-
-**Command form:** `msteams <command> [value] [--flag value]`.
-
-- **Commands** are the tool names without the `teams_`/`get_` prefix (`search`, `send_message`, `thread`, `meetings`). Any unambiguous abbreviation works, so `send` reaches `send_message`; the full tool name always works too.
-- **Flags** are the tool's own parameters, in camelCase (`--conversationId`, `--threadRootId`, `--fromUrl`). A few short aliases exist where they read better: `--to`, `--msg`, `--reply`, `--user`, `--force`. Booleans work bare (`--markRead`) or with a value (`--markRead false`). Unknown flags are rejected with the list of valid ones.
-- **The first bare value** goes to the command's main parameter: `msteams search "query"` is `--query "query"`.
-- **Output** goes to stdout, diagnostics to stderr, so pipes and redirects behave. Colour and emoji appear only on a terminal, and `NO_COLOR` turns them off.
-- **Exit codes:** `0` success, `1` the tool failed, `2` the command was malformed.
-- **`--json`** prints the tool's JSON payload, ready for `jq`.
-
-### From a repo clone
-
-If you're working from source, the same CLI is wired to `npm run cli` (runs via `tsx`, no build needed):
-
-```bash
-npm run cli                          # command list
-npm run cli -- search "your query"
-npm run cli -- status
-npm run cli -- send "Hi" --to "conversation-id"
-```
-
-## Limitations
-
-- **Login required** - Run `teams_login` to authenticate (opens browser)
-- **Token expiry** - Tokens expire after ~1 hour; headless refresh is attempted or run `teams_login` again when needed
-- **Undocumented APIs** - Uses Microsoft's internal APIs which may change without notice
-- **Search limitations** - Full-text search only; thread replies not matching search terms won't appear (but LLM will likely use `teams_get_thread` for full context)
-- **Assignments** - Education tenants only. Turn-in and undo turn-in act on your real account; handing in again records a new hand-in date that your teacher sees
-
-
-
-## Session Files
-
-Session files are stored in a user config directory (encrypted):
-
-- **macOS/Linux**: `~/.teams-mcp-server/`
-- **Windows**: `%APPDATA%\teams-mcp-server\`
-
-Contents: `session-state.json`, `token-cache.json`, `browser-profile/`
-
-If your session expires, call `teams_login` or delete the config directory.
-
-## Development
-
-For local development:
-
-```bash
-git clone https://github.com/kasim672/mcp-server-msteams.git
-cd mcp-server-msteams
-npm install
-npm run build
-```
-
-Development commands:
-
-```bash
-npm run dev          # Run MCP server in dev mode
-npm run build        # Compile TypeScript
-npm run lint         # Run ESLint
-npm test             # Run unit tests
-npm run typecheck    # TypeScript type checking
-```
-
-For development with hot reload, configure your MCP client:
+#### Cursor &amp; Windsurf
+Add to your project's `.cursor/mcp.json` or global MCP settings:
 
 ```json
 {
   "mcpServers": {
     "teams": {
       "command": "npx",
-      "args": ["tsx", "/path/to/msteams-mcp/src/index.ts"]
+      "args": ["-y", "mcp-server-msteams@latest"]
     }
   }
 }
 ```
 
-See [AGENTS.md](AGENTS.md) for detailed architecture and contribution guidelines.
+#### Local Clone Execution (Recommended for Active Development)
+If you are developing or testing locally:
+
+```json
+{
+  "mcpServers": {
+    "teams": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-server-msteams/dist/index.js"]
+    }
+  }
+}
+```
 
 ---
 
+## Architecture &amp; Design
+
+<div align="center">
+  <img src="assets/architecture.svg" alt="Architecture Diagram" width="100%" />
+</div>
+
+1. **Protocol Layer**: Standard JSON-RPC 2.0 over standard I/O (MCP specification compliant).
+2. **Session Engine**:
+   - Stores session state in `~/.teams-mcp-server/` (Linux/macOS) or `%APPDATA%\teams-mcp-server\` (Windows).
+   - Local token database encrypted with authenticated **AES-256-GCM**.
+   - Persistent browser profile preserves Microsoft SSO cookies, allowing silent headless re-authentication.
+3. **Multi-Service Cloud Gateway**:
+   - **ChatSvc (`chatsvcagg.teams.microsoft.com`)**: Real-time messaging, channels, direct chats, reactions.
+   - **Substrate (`substrate.office.com`)**: Microsoft 365 natural language search, Outlook emails, people graph.
+   - **Assignments (`assignments.edu.cloud.microsoft`)**: Coursework data, submission deadlines, rubrics.
+   - **Graph API (`graph.microsoft.com`)**: OneDrive files, SharePoint document libraries, meeting transcripts.
+
+---
+
+## Live Terminal CLI
+
+The server bundles the `msteams` command-line interface with 100% feature parity to the MCP tools:
+
+<div align="center">
+  <img src="assets/terminal-preview.svg" alt="Terminal Preview" width="100%" />
+</div>
+
+Install globally via npm for instant system-wide access:
+
+```bash
+npm install -g mcp-server-msteams
+
+# List all available commands
+msteams --help
+
+# Check status
+msteams status
+
+# List active coursework
+msteams teams_list_assignments --status active
+```
+
+---
+
+## Complete Tool Catalog
+
+`mcp-server-msteams` exposes **30+ Zod-validated tools** across 6 domains:
+
+### 1. Authentication &amp; Session
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_status` | *(None)* | Check authentication status, tenant details, and token validity across all services. |
+| `teams_login` | *(None)* | Opens a visible browser window for Microsoft Teams login. Auto-closes upon success. |
+
+### 2. EDU Assignments Automation
+
+> **Note**: Designed for education tenants (schools, universities, colleges).
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_list_assignments` | `status` (`active` \| `completed` \| `all`) | List all coursework assignments with due dates, grades, and current state. |
+| `teams_get_assignment` | `classId`, `assignmentId` | Get detailed assignment instructions, attached files, rubrics, and submission status. |
+| `teams_attach_file` | `filePath`, `classId`*, `assignmentId`*, `turnIn` (bool) | **Upload and attach a local file** directly to an assignment submission via Playwright automation, with optional instant turn-in. |
+| `teams_remove_attachment` | `fileName`*, `classId`*, `assignmentId`* | Remove an uploaded attachment from a working submission. |
+| `teams_submission_action` | `action` (`submit` \| `unsubmit` \| `view`), `classId`, `assignmentId`, `submissionId` | Turn in an assignment, undo turn-in, or mark as viewed. |
+
+### 3. Messaging &amp; Conversations
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_send_message` | `chatId`, `content` | Send a new message (supports Markdown tables and formatting). |
+| `teams_get_chat` | `chatId`, `pageSize` | Read messages and conversation history from a 1:1, group, or meeting chat. |
+| `teams_get_unread` | `limit` | Fetch all unread chats, channels, and mentions. |
+| `teams_list_chats` | `pageSize` | List recent conversations with participant details and last message snippet. |
+| `teams_get_thread` | `channelId`, `messageId` | Fetch all replies in a specific channel conversation thread. |
+| `teams_edit_message` | `chatId`, `messageId`, `content` | Edit the text content of a previously sent message. |
+| `teams_delete_message` | `chatId`, `messageId` | Delete a message sent by your user. |
+| `teams_mark_read` | `chatId`, `messageId` | Update server-side read receipt state. |
+| `teams_wait_for_reply` | `chatId`, `timeoutMs` | Efficient long-polling for incoming responses from peers. |
+
+### 4. Search &amp; Discovery
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_search` | `query`, `pageSize` | Semantic natural language search across messages, chats, and channels. |
+| `teams_search_email` | `query`, `pageSize` | Search your Exchange/Outlook inbox and sent mail from Teams context. |
+| `teams_search_people` | `query`, `limit` | Search institutional directory for colleagues, professors, and classmates. |
+
+### 5. Files, Meetings &amp; Transcripts
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_get_shared_files` | `chatId` | List files shared within a conversation with download URLs. |
+| `teams_download_file` | `fileUrl`, `outputPath` | Securely download SharePoint, OneDrive, or assignment files to local disk. |
+| `teams_get_meetings` | `startTime`*, `endTime`* | Retrieve upcoming and past calendar events and Teams meetings. |
+| `teams_get_transcript` | `meetingId` | Download automated meeting transcripts with speaker timestamps. |
+
+### 6. People &amp; Directory
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `teams_get_me` | *(None)* | Get profile details, tenant ID, and email of the logged-in user. |
+| `teams_get_person` | `userId` | Look up detailed job title, department, and contact info for a person. |
+| `teams_get_frequent_contacts`| `limit` | Get the list of contacts you interact with most frequently. |
+| `teams_add_reaction` | `chatId`, `messageId`, `reactionType` | React to a message (`like`, `heart`, `laugh`, `surprised`, `sad`, `angry`). |
+| `teams_remove_reaction` | `chatId`, `messageId`, `reactionType` | Remove a previously added reaction. |
+
+---
+
+## Linux Dual-Boot &amp; Setup Guide
+
+If you are using Linux (Ubuntu, Debian, Fedora, Arch, Manjaro, Pop!_OS) or switching from a dual-boot setup, `mcp-server-msteams` is tested and verified to work out-of-the-box.
+
+### Prerequisites &amp; Browser Installation
+
+Ensure you have **Node.js >= 20** and one supported browser:
+
+#### 1. Install Node.js 20+
+```bash
+# Ubuntu / Debian
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs git
+
+# Fedora
+sudo dnf install -y nodejs git
+
+# Arch Linux
+sudo pacman -S nodejs npm git
+```
+
+#### 2. Install a Browser
+`mcp-server-msteams` uses your system browser, saving ~180MB of bundled browser downloads. Install any of the following:
+
+```bash
+# Option A: Google Chrome (Ubuntu / Debian)
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
+# Option B: Brave Browser (Ubuntu / Debian)
+sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+sudo apt update && sudo apt install -y brave-browser
+
+# Option C: Chromium (Ubuntu / Debian)
+sudo apt install -y chromium-browser
+
+# Option D: Microsoft Edge (Ubuntu / Debian)
+curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
+sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge-dev.list'
+sudo apt update && sudo apt install -y microsoft-edge-stable
+```
+
+### Cloning &amp; Local Verification
+
+```bash
+# 1. Clone your private standalone repository
+git clone https://github.com/kasim672/mcp-server-msteams.git
+cd mcp-server-msteams
+
+# 2. Install dependencies
+npm install
+
+# 3. Build TypeScript code
+npm run build
+
+# 4. Run the entire test suite (559 tests)
+npm test
+
+# 5. Perform initial login (opens browser window)
+npx tsx src/cli.ts teams_login
+
+# 6. Verify authentication status
+npx tsx src/cli.ts teams_status
+```
+
+### Environment Variables
+
+Configure optional overrides in your `~/.bashrc` or `~/.zshrc`:
+
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `TEAMS_BROWSER` | Explicitly choose browser engine (`brave`, `chrome`, `edge`, `chromium`). | `export TEAMS_BROWSER=brave` |
+| `TEAMS_BROWSER_PATH`| Absolute path to custom browser executable. | `export TEAMS_BROWSER_PATH=/usr/bin/google-chrome` |
+| `LOG_LEVEL` | Logging verbosity (`debug`, `info`, `warn`, `error`). | `export LOG_LEVEL=debug` |
+
+---
+
+## Windows Setup Guide
+
+1. Ensure **Node.js >= 20** is installed from [nodejs.org](https://nodejs.org/).
+2. Microsoft Edge is pre-installed on Windows 10/11 and is automatically detected. Brave and Google Chrome are also supported.
+3. In PowerShell or Command Prompt:
+
+```powershell
+git clone https://github.com/kasim672/mcp-server-msteams.git
+cd mcp-server-msteams
+npm install
+npm run build
+npm test
+```
+
+4. Session data on Windows is stored in `%APPDATA%\teams-mcp-server\`.
+
+---
+
+## Step-by-Step Assignment Workflow
+
+Here is how an AI assistant or student automates coursework using `mcp-server-msteams`:
+
+### Step 1: Check Coursework Deadlines
+```bash
+msteams teams_list_assignments --status active
+```
+*Output returns all pending homework, modules, quizzes, and due dates across your enrolled classes.*
+
+### Step 2: Read Detailed Instructions &amp; Download Attachments
+```bash
+msteams teams_get_assignment --classId "19:abc...tacx" --assignmentId "a8f3b..."
+```
+*Returns teacher rubrics, point scales, and resource download URLs. Use `teams_download_file` to fetch reference slides or templates.*
+
+### Step 3: Attach Local Submission File
+```bash
+# Attach file and optionally turn in immediately:
+msteams teams_attach_file \
+  --classId "19:abc...tacx" \
+  --assignmentId "a8f3b..." \
+  --filePath "/home/kasim/Documents/Assignment3_Report.pdf" \
+  --turnIn
+```
+*Playwright launches headless Chromium, navigates directly to the student portal, uploads the file, verifies the attachment DOM element, and triggers the Turn In button.*
+
+### Step 4: Undo Turn-In or Remove Attachment (If needed)
+```bash
+# Undo turn-in:
+msteams teams_submission_action --action unsubmit --classId "19:abc..." --assignmentId "a8f3b..." --submissionId "sub_01..."
+
+# Remove attachment:
+msteams teams_remove_attachment --classId "19:abc..." --assignmentId "a8f3b..." --fileName "Assignment3_Report.pdf"
+```
+
+---
+
+## Development &amp; Testing
+
+### Running Tests
+The project features a comprehensive Vitest test suite covering all APIs, MSAL token refresh flows, parsers, and tool schemas:
+
+```bash
+# Run all unit tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run code coverage report
+npm run test:coverage
+```
+
+### Static Analysis
+```bash
+# TypeScript type checking
+npm run typecheck
+
+# Code linting
+npm run lint
+```
+
+---
+
+## Publishing to NPM
+
+When you are ready to make `mcp-server-msteams` publicly installable worldwide:
+
+```bash
+# 1. Log in to your npm account
+npm login
+
+# 2. Verify tarball contents before uploading
+npm pack --dry-run
+
+# 3. Publish to npm registry
+npm publish
+```
+
+Once published, anyone can use it instantly:
+```bash
+npx -y mcp-server-msteams msteams status
+```
+
+---
+
+## Security &amp; Privacy
+
+- **No Third-Party Cloud Relays**: Every request communicates directly from your machine to Microsoft's official servers (`*.microsoft.com`, `*.office.com`).
+- **Encrypted Local Storage**: Cached tokens and session states are encrypted with **AES-256-GCM** using local machine salt and hardware-derived keys.
+- **Owner-Only File Permissions**: On Linux and macOS, the session directory is created with `0o700` (`rwx------`) and files with `0o600` (`rw-------`).
+- **No Credential Escalation**: The server operates strictly within the permissions of your logged-in Microsoft Teams account.
+
+---
+
+## Troubleshooting &amp; FAQ
+
+### Q: Browser fails to launch on Linux with "Missing $DISPLAY"?
+`mcp-server-msteams` automatically detects headless Linux terminal environments and switches to headless mode. For the initial login (`teams_login`), ensure you are running in a desktop GUI environment (GNOME, KDE, XFCE, Sway) or pass an X11 forwarding session (`ssh -X`).
+
+### Q: "SingletonLock" error when starting browser?
+If a browser session crashed unexpectedly, Chromium may leave behind a lock file. `mcp-server-msteams` automatically detects and clears stale `SingletonLock` files older than your running process. If needed, you can delete it manually:
+```bash
+rm -f ~/.teams-mcp-server/browser-profile/SingletonLock
+```
+
+### Q: How do I completely reset my login session?
+Delete the local configuration folder and run `teams_login` again:
+```bash
+# Linux / macOS
+rm -rf ~/.teams-mcp-server
+
+# Windows (PowerShell)
+Remove-Item -Recurse -Force "$env:APPDATA\teams-mcp-server"
+```
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+Developed and maintained by **Kasim Ghanchi** ([@kasim672](https://github.com/kasim672)).

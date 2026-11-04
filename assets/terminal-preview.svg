@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="termGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2e"/>
+      <stop offset="100%" stop-color="#11111b"/>
+    </linearGradient>
+    <filter id="termShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <rect width="880" height="480" fill="#090d16" rx="16"/>
+
+  <!-- Terminal Window Card -->
+  <g transform="translate(30, 24)" filter="url(#termShadow)">
+    <rect width="820" height="432" fill="url(#termGrad)" rx="10" stroke="#313244" stroke-width="1.5"/>
+
+    <!-- Terminal Header Bar -->
+    <rect width="820" height="38" fill="#181825" rx="10"/>
+    <rect width="820" height="10" y="28" fill="#181825"/>
+    <circle cx="20" cy="19" r="6" fill="#f38ba8"/>
+    <circle cx="38" cy="19" r="6" fill="#f9e2af"/>
+    <circle cx="56" cy="19" r="6" fill="#a6e3a1"/>
+    <text x="410" y="24" fill="#6c7086" font-family="-apple-system, BlinkMacSystemFont, monospace" font-size="12" text-anchor="middle">bash — kasim@dev-workstation: ~/workspace</text>
+
+    <!-- Terminal Content -->
+    <g transform="translate(24, 60)" font-family="'JetBrains Mono', 'Fira Code', 'Consolas', monospace" font-size="12" line-height="1.5">
+      <!-- Prompt 1 -->
+      <text y="16">
+        <tspan fill="#a6e3a1" font-weight="bold">kasim@linux</tspan><tspan fill="#6c7086">:</tspan><tspan fill="#89b4fa">~/projects</tspan><tspan fill="#cdd6f4">$ </tspan>
+        <tspan fill="#f9e2af">npx</tspan><tspan fill="#cdd6f4"> -y mcp-server-msteams msteams status</tspan>
+      </text>
+
+      <!-- Output 1 -->
+      <text y="42" fill="#cdd6f4">
+        <tspan fill="#585b70">[status] </tspan><tspan fill="#a6e3a1">&#x2714; Authenticated as </tspan><tspan fill="#f5c2e7" font-weight="bold">Kasim Ghanchi</tspan><tspan fill="#6c7086"> (kasim.ghanchi@vit.edu.in)</tspan>
+      </text>
+      <text y="62" fill="#cdd6f4">
+        <tspan fill="#585b70">[status] </tspan><tspan fill="#a6e3a1">&#x2714; Tenant: </tspan><tspan fill="#89b4fa">Vellore Institute of Technology (EDU)</tspan>
+      </text>
+      <text y="82" fill="#cdd6f4">
+        <tspan fill="#585b70">[status] </tspan><tspan fill="#a6e3a1">&#x2714; Tokens valid: </tspan><tspan fill="#cdd6f4">Substrate, Skype, Chatsvc, Assignments, Graph</tspan>
+      </text>
+
+      <!-- Blank / Prompt 2 -->
+      <text y="122">
+        <tspan fill="#a6e3a1" font-weight="bold">kasim@linux</tspan><tspan fill="#6c7086">:</tspan><tspan fill="#89b4fa">~/projects</tspan><tspan fill="#cdd6f4">$ </tspan>
+        <tspan fill="#f9e2af">msteams</tspan><tspan fill="#cdd6f4"> teams_list_assignments --status active</tspan>
+      </text>
+
+      <!-- Table header -->
+      <text y="148" fill="#89b4fa" font-weight="bold">
+        DUE DATE       STATUS       CLASS              ASSIGNMENT
+      </text>
+      <text y="166" fill="#45475a">
+        ─────────────────────────────────────────────────────────────────────────────
+      </text>
+      <text y="184" fill="#cdd6f4">
+        <tspan fill="#fab387">Nov 07, 23:59</tspan>  <tspan fill="#f38ba8">pending</tspan>      B.Tech Capstone    Module 3 Technical Architecture
+      </text>
+      <text y="202" fill="#cdd6f4">
+        <tspan fill="#fab387">Nov 12, 17:00</tspan>  <tspan fill="#f38ba8">pending</tspan>      Cloud Computing    Lab 4: Distributed Microservices
+      </text>
+
+      <!-- Blank / Prompt 3 -->
+      <text y="242">
+        <tspan fill="#a6e3a1" font-weight="bold">kasim@linux</tspan><tspan fill="#6c7086">:</tspan><tspan fill="#89b4fa">~/projects</tspan><tspan fill="#cdd6f4">$ </tspan>
+        <tspan fill="#f9e2af">msteams</tspan><tspan fill="#cdd6f4"> teams_attach_file --classId 7d1a... --assignmentId a4f2... --filePath "./report.pdf" --turnIn</tspan>
+      </text>
+
+      <!-- Output 3 -->
+      <text y="268" fill="#a6e3a1">
+        <tspan fill="#585b70">[assignments] </tspan>Launching Chromium headless browser session...
+      </text>
+      <text y="288" fill="#a6e3a1">
+        <tspan fill="#585b70">[assignments] </tspan>Navigating to assignment submission portal...
+      </text>
+      <text y="308" fill="#a6e3a1">
+        <tspan fill="#585b70">[assignments] </tspan>Uploading file 'report.pdf' (1.4 MB)...
+      </text>
+      <text y="328" fill="#a6adc8">
+        <tspan fill="#585b70">[assignments] </tspan>Executing turn-in submission action...
+      </text>
+      <text y="348" fill="#a6e3a1" font-weight="bold">
+        &#x2714; Successfully attached 'report.pdf' and turned in assignment!
+      </text>
+    </g>
+  </g>
+</svg>

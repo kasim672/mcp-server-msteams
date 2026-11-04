@@ -123,30 +123,44 @@ export function findBravePath(): string | undefined {
     candidates.push('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser');
   } else {
     // Linux
+    const home = os.homedir();
     candidates.push(
       '/usr/bin/brave-browser',
       '/usr/bin/brave',
       '/snap/bin/brave',
-      '/usr/local/bin/brave-browser'
+      '/usr/local/bin/brave-browser',
+      '/var/lib/flatpak/exports/bin/com.brave.Browser',
+      path.join(home, '.local/share/flatpak/exports/bin/com.brave.Browser')
     );
   }
   return candidates.find((p) => fs.existsSync(p));
 }
 
 /**
- * Searches for known browser installations on Linux.
+ * Searches for known browser installations on Linux across deb/rpm, flatpak, snap, and /opt.
  */
 export function findLinuxBrowserPath(): { executablePath: string; name: string } | undefined {
+  const home = os.homedir();
   const candidates = [
     { name: 'Google Chrome', path: '/usr/bin/google-chrome' },
     { name: 'Google Chrome', path: '/usr/bin/google-chrome-stable' },
+    { name: 'Google Chrome', path: '/opt/google/chrome/chrome' },
+    { name: 'Google Chrome', path: '/opt/google/chrome/google-chrome' },
     { name: 'Brave Browser', path: '/usr/bin/brave-browser' },
     { name: 'Brave Browser', path: '/usr/bin/brave' },
+    { name: 'Brave Browser', path: '/snap/bin/brave' },
+    { name: 'Brave Browser', path: '/var/lib/flatpak/exports/bin/com.brave.Browser' },
+    { name: 'Brave Browser', path: path.join(home, '.local/share/flatpak/exports/bin/com.brave.Browser') },
     { name: 'Microsoft Edge', path: '/usr/bin/microsoft-edge' },
     { name: 'Microsoft Edge', path: '/usr/bin/microsoft-edge-stable' },
+    { name: 'Microsoft Edge', path: '/usr/bin/microsoft-edge-beta' },
+    { name: 'Microsoft Edge', path: '/usr/bin/microsoft-edge-dev' },
+    { name: 'Microsoft Edge', path: '/opt/microsoft/msedge/msedge' },
     { name: 'Chromium', path: '/usr/bin/chromium-browser' },
     { name: 'Chromium', path: '/usr/bin/chromium' },
     { name: 'Chromium', path: '/snap/bin/chromium' },
+    { name: 'Chromium', path: '/var/lib/flatpak/exports/bin/org.chromium.Chromium' },
+    { name: 'Chromium', path: path.join(home, '.local/share/flatpak/exports/bin/org.chromium.Chromium') },
   ];
   const found = candidates.find((c) => fs.existsSync(c.path));
   return found ? { executablePath: found.path, name: found.name } : undefined;
@@ -217,17 +231,35 @@ export async function createBrowserContext(
 
   cleanupStaleSingletonLock();
 
+  // On Linux, if visible mode requested without an active display server, fallback to headless gracefully
+  let effectiveHeadless = headless;
+  if (process.platform === 'linux' && !headless && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) {
+    log.warn('browser', 'No DISPLAY or WAYLAND_DISPLAY found on Linux; launching in headless mode.');
+    effectiveHeadless = true;
+  }
+
   const launchBrowser = async (config: ResolvedBrowserConfig): Promise<BrowserManager> => {
+    const args: string[] = [
+      '--disable-dev-shm-usage',
+      '--no-first-run',
+      '--no-default-browser-check',
+    ];
+    if (process.platform === 'linux' && (process.getuid?.() === 0 || process.env.CONTAINER || process.env.DOCKER)) {
+      args.push('--no-sandbox', '--disable-setuid-sandbox');
+    }
+
     const launchOptions: {
       headless: boolean;
       viewport: { width: number; height: number };
       acceptDownloads: boolean;
       channel?: 'msedge' | 'chrome' | 'chromium';
       executablePath?: string;
+      args: string[];
     } = {
-      headless,
+      headless: effectiveHeadless,
       viewport: { width: 1280, height: 800 },
       acceptDownloads: false,
+      args,
     };
 
     if (config.executablePath) {
@@ -264,7 +296,7 @@ export async function createBrowserContext(
       }
     }
 
-    // Fallback attempt: if Brave or custom executable failed, try channel 'msedge' (win32) or 'chrome'
+    // Fallback attempt: if Brave or custom executable failed, try standard channels
     if (browserConfig.executablePath) {
       log.warn('browser', `Failed to launch via executablePath, attempting fallback channel...`);
       try {
@@ -274,7 +306,14 @@ export async function createBrowserContext(
         };
         return await launchBrowser(fallbackConfig);
       } catch {
-        // Fallback also failed, proceed to throw original error
+        // Second fallback on Linux: try chromium channel if chrome is missing
+        if (process.platform === 'linux') {
+          try {
+            return await launchBrowser({ channel: 'chromium', name: 'Chromium' });
+          } catch {
+            // Fallback also failed, proceed to throw original error
+          }
+        }
       }
     }
 

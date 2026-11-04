@@ -1,4 +1,4 @@
-# Clean Code Review: msteams-mcp
+# Clean Code Review: mcp-server-msteams
 
 **Date**: 2026-02-12
 **Branch**: `refactor/clean-code-review`
