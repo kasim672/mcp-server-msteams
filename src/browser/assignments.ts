@@ -45,6 +45,28 @@ export interface RemoveAssignmentAttachmentResult {
   assignmentUrl: string;
 }
 
+/** Only navigate trusted Teams/Assignments origins with the persistent signed-in browser. */
+const TRUSTED_ASSIGNMENT_HOSTS = new Set([
+  'teams.microsoft.com',
+  'teams.cloud.microsoft',
+  'teams.chat.microsoft.com',
+  'teams.microsoft.us',
+  'dod.teams.microsoft.us',
+  'assignments.edu.cloud.microsoft',
+]);
+
+export function isAllowedAssignmentUrl(candidate: string): boolean {
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === 'https:' &&
+      !parsed.username &&
+      !parsed.password &&
+      TRUSTED_ASSIGNMENT_HOSTS.has(parsed.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Resolves the assignment webUrl from either input or via getAssignment API.
  */
@@ -54,7 +76,11 @@ async function resolveAssignmentUrl(
   assignmentId?: string
 ): Promise<Result<string, McpError>> {
   if (inputUrl && inputUrl.trim().length > 0) {
-    return ok(inputUrl.trim());
+    const url = inputUrl.trim();
+    if (!isAllowedAssignmentUrl(url)) {
+      return err(createError(ErrorCode.INVALID_INPUT, 'assignmentUrl must be an HTTPS Microsoft Teams assignment link.'));
+    }
+    return ok(url);
   }
 
   if (classId && assignmentId) {
@@ -69,6 +95,9 @@ async function resolveAssignmentUrl(
           'Assignment detail does not contain a webUrl deep link.'
         )
       );
+    }
+    if (!isAllowedAssignmentUrl(detail.value.webUrl)) {
+      return err(createError(ErrorCode.API_ERROR, 'Assignments returned a link outside the trusted Teams domains.'));
     }
     return ok(detail.value.webUrl);
   }
@@ -104,6 +133,26 @@ export async function attachAssignmentFile(
   }
   const assignmentUrl = urlResult.value;
   const fileName = path.basename(resolvedPath);
+
+  // Never perform a destructive turn-in based on an unverified UI button click.
+  // Resolve the submission identifier before uploading, so missing metadata
+  // cannot leave the user with a file attached and an ambiguous turn-in result.
+  let turnInSubmissionId = input.submissionId;
+  if (input.turnIn) {
+    if (!input.classId || !input.assignmentId) {
+      return err(createError(ErrorCode.INVALID_INPUT,
+        'turnIn requires classId and assignmentId so the final submitted state can be verified.'));
+    }
+    if (!turnInSubmissionId) {
+      const detail = await getAssignment(input.classId, input.assignmentId);
+      if (!detail.ok) return detail;
+      turnInSubmissionId = detail.value.submission?.id;
+    }
+    if (!turnInSubmissionId) {
+      return err(createError(ErrorCode.INVALID_INPUT,
+        'No submissionId is available for this assignment; turn-in is not safe to perform.'));
+    }
+  }
 
   log.info('assignments-browser', `Attaching file "${fileName}" to assignment...`);
 
@@ -172,27 +221,27 @@ export async function attachAssignmentFile(
 
     const bodyText = await frame.evaluate(() => document.body.innerText);
     const uploadConfirmed = bodyText.includes(fileName);
+    if (!uploadConfirmed) {
+      return err(createError(ErrorCode.API_ERROR,
+        `Upload of "${fileName}" could not be confirmed in Teams. Check the assignment before attempting another upload or turn-in.`,
+        { retryable: false }));
+    }
 
     let turnedIn = false;
     if (input.turnIn) {
-      if (input.classId && input.assignmentId && input.submissionId) {
-        log.info('assignments-browser', 'Executing turn-in via API...');
-        const submitResult = await actOnSubmission(
-          'submit',
-          input.classId,
-          input.assignmentId,
-          input.submissionId
-        );
-        turnedIn = submitResult.ok && submitResult.value.status === 'submitted';
-      } else {
-        log.info('assignments-browser', 'Executing turn-in via UI button...');
-        const turnInBtn = frame.locator('#assignmentViewerStudentTurnInButton');
-        if (await turnInBtn.isVisible() && (await turnInBtn.isEnabled())) {
-          await turnInBtn.click();
-          await page.waitForTimeout(4000);
-          turnedIn = true;
-        }
+      log.info('assignments-browser', 'Executing verified turn-in via Assignments API...');
+      const submitResult = await actOnSubmission(
+        'submit',
+        input.classId!,
+        input.assignmentId!,
+        turnInSubmissionId!
+      );
+      if (!submitResult.ok || submitResult.value.status !== 'submitted') {
+        return err(createError(ErrorCode.API_ERROR,
+          `File "${fileName}" appears attached, but turn-in could not be confirmed. Check the assignment before repeating the action.`,
+          { retryable: false }));
       }
+      turnedIn = true;
     }
 
     return ok({

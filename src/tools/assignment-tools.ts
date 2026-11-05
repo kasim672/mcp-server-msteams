@@ -20,6 +20,7 @@ import {
 import {
   attachAssignmentFile,
   removeAssignmentAttachment,
+  isAllowedAssignmentUrl,
 } from '../browser/assignments.js';
 
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../constants.js';
@@ -49,7 +50,7 @@ export const SubmissionActionInputSchema = z.object({
 
 export const AttachAssignmentFileInputSchema = z.object({
   filePath: z.string().describe('Absolute local file path on this machine to upload and attach.'),
-  assignmentUrl: z.string().url().optional().describe('Direct Teams assignment deep link (webUrl). If omitted, classId and assignmentId must be provided.'),
+  assignmentUrl: z.string().url().refine(isAllowedAssignmentUrl, 'Must be a trusted HTTPS Teams assignment link').optional().describe('Direct Teams assignment deep link (webUrl). If omitted, classId and assignmentId must be provided.'),
   classId: z.string().regex(ASSIGNMENT_ID_PATTERN).optional().describe('Class ID (required if assignmentUrl is not provided).'),
   assignmentId: z.string().regex(ASSIGNMENT_ID_PATTERN).optional().describe('Assignment ID (required if assignmentUrl is not provided).'),
   submissionId: z.string().regex(ASSIGNMENT_ID_PATTERN).optional().describe('Submission ID (optional, used if turnIn is true).'),
@@ -57,7 +58,7 @@ export const AttachAssignmentFileInputSchema = z.object({
 });
 
 export const RemoveAssignmentAttachmentInputSchema = z.object({
-  assignmentUrl: z.string().url().optional().describe('Direct Teams assignment deep link (webUrl). If omitted, classId and assignmentId must be provided.'),
+  assignmentUrl: z.string().url().refine(isAllowedAssignmentUrl, 'Must be a trusted HTTPS Teams assignment link').optional().describe('Direct Teams assignment deep link (webUrl). If omitted, classId and assignmentId must be provided.'),
   classId: z.string().regex(ASSIGNMENT_ID_PATTERN).optional().describe('Class ID (required if assignmentUrl is not provided).'),
   assignmentId: z.string().regex(ASSIGNMENT_ID_PATTERN).optional().describe('Assignment ID (required if assignmentUrl is not provided).'),
   fileName: z.string().optional().describe('Specific file name to remove (e.g. "report.pdf"). If omitted, the first removable attachment is removed.'),
