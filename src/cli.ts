@@ -23,7 +23,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createServer } from './server.js';
-import { toolCategories } from './tools/registry.js';
+import { getToolDefinitions, toolCategories } from './tools/registry.js';
 import { UsageError, parseToolArgs, resolveToolName, shortName } from './cli/resolve.js';
 import { printFailure, printResponse } from './cli/render.js';
 import { renderIndex, renderToolHelp } from './cli/help.js';
@@ -74,24 +74,23 @@ async function run(argv: string[]): Promise<number> {
   const command = commandIndex === -1 ? null : argv[commandIndex];
   const rest = argv.filter((_, index) => index !== commandIndex);
 
+  // Help is generated from the local registry: don't start the MCP transport
+  // just to print commands. This makes --help fast even when Teams is offline.
+  const helpTools = getToolDefinitions();
+  const wantsHelp = command === null || command === 'help';
+  if (wantsHelp) {
+    const names = helpTools.map(tool => tool.name);
+    const target = rest.find(arg => !arg.startsWith('-'));
+    const tool = target ? helpTools.find(t => t.name === resolveToolName(names, target)) : undefined;
+    if (rest.includes('--json')) console.log(JSON.stringify(tool ?? { tools: helpTools }, null, 2));
+    else console.log(tool ? renderToolHelp(helpTools, tool) : renderIndex(helpTools, toolCategories, pkg.version));
+    return 0;
+  }
+
   const { client, cleanup } = await connect();
   try {
     const { tools } = await client.listTools();
     const names = tools.map(tool => tool.name);
-
-    // Help: bare invocation, `help`, `help <command>` or `<command> --help`.
-    const wantsHelp = command === null || command === 'help';
-    if (wantsHelp) {
-      const target = rest.find(arg => !arg.startsWith('-'));
-      const tool = target ? tools.find(t => t.name === resolveToolName(names, target)) : undefined;
-      if (rest.includes('--json')) {
-        console.log(JSON.stringify(tool ?? { tools }, null, 2));
-      } else {
-        console.log(tool ? renderToolHelp(tools, tool) : renderIndex(tools, toolCategories, pkg.version));
-      }
-      return 0;
-    }
-
     const name = resolveToolName(names, command);
     const tool = tools.find(t => t.name === name) as Tool;
     const label = shortName(names, name);
