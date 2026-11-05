@@ -38,30 +38,41 @@ export function setLogLevel(level: LogLevel): void {
   currentLevel = level;
 }
 
+/**
+ * Redact common credentials and query strings before writing to stderr.
+ * The full URLs still reach the API/browser; only diagnostics are sanitized.
+ */
+export function redactLogMessage(message: string): string {
+  return message
+    .replace(/(Bearer\\s+)[A-Za-z0-9._~+/-]+/gi, '$1[redacted]')
+    .replace(/((?:refresh_token|access_token|id_token|skypetoken(?:_asm)?|authorization)=)[^\\s;&]+/gi, '$1[redacted]')
+    .replace(/(https?:\\/\\/[^\\s?#]+)\\?[^\\s]+/gi, '$1?[redacted]');
+}
+
 /** Log an error message. Always shown unless level is somehow above error. */
 export function error(context: string, message: string): void {
   if (shouldLog('error')) {
-    console.error(`[${context}] ${message}`);
+    console.error(`[${context}] ${redactLogMessage(message)}`);
   }
 }
 
 /** Log a warning message. */
 export function warn(context: string, message: string): void {
   if (shouldLog('warn')) {
-    console.warn(`[${context}] ${message}`);
+    console.warn(`[${context}] ${redactLogMessage(message)}`);
   }
 }
 
 /** Log an informational message. */
 export function info(context: string, message: string): void {
   if (shouldLog('info')) {
-    console.error(`[${context}] ${message}`);
+    console.error(`[${context}] ${redactLogMessage(message)}`);
   }
 }
 
 /** Log a debug message. Only shown when LOG_LEVEL=debug. */
 export function debug(context: string, message: string): void {
   if (shouldLog('debug')) {
-    console.error(`[${context}] ${message}`);
+    console.error(`[${context}] ${redactLogMessage(message)}`);
   }
 }
