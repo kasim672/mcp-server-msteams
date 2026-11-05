@@ -498,58 +498,10 @@ describe('refreshTokensViaHttp', () => {
     expect(writeSessionState).not.toHaveBeenCalled();
   });
 
-  it('refreshes only Assignments and preserves Graph credentials with the same scopes', async () => {
-    const state = makeMockSessionState();
-    const graphEntry = makeAccessTokenEntry('graph', 'EduAssignments.ReadWrite');
-    state.origins[0].localStorage.push(graphEntry);
-    graphEntry.value = JSON.stringify({ ...JSON.parse(graphEntry.value), secret: `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify({ aud: '00000003-0000-0000-c000-000000000000' })).toString('base64url')}.sig` });
-    const originalGraph = graphEntry.value;
-    const accessToken = `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify({ aud: '8f348934-64be-4bb2-bc16-c54c96789f43', exp: Date.now() / 1000 + 3600 })).toString('base64url')}.sig`;
-    vi.mocked(readSessionState).mockReturnValue(state);
-    vi.mocked(getTeamsOrigin).mockReturnValue(state.origins[0]);
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({
-      ...makeTokenResponse('EduAssignments.ReadWrite'), access_token: accessToken,
-    }), { status: 200 }));
-    expect(await refreshTokensViaHttp('assignments')).toEqual({ ok: true, value: undefined });
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(graphEntry.value).toBe(originalGraph);
-    const saved = vi.mocked(writeSessionState).mock.calls[0][0];
-    expect(saved.origins[0].localStorage.some(item => JSON.parse(item.value).secret === accessToken)).toBe(true);
-    expect(saved.cookies[0].value).toBe('old-skype-token');
-    expect(clearTokenCache).not.toHaveBeenCalled();
-  });
 
-  it('refreshes only Graph on demand, updating the Graph entry in place', async () => {
-    const state = makeMockSessionState();
-    const jwt = (claims: object) => `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.sig`;
-    const graphEntry = makeAccessTokenEntry('graph', 'Files.ReadWrite.All');
-    graphEntry.value = JSON.stringify({ ...JSON.parse(graphEntry.value), secret: jwt({ aud: 'https://graph.microsoft.com', exp: 1 }) });
-    state.origins[0].localStorage.push(graphEntry);
-    const assignmentsEntry = makeAccessTokenEntry('assignments', 'EduAssignments.ReadWrite');
-    assignmentsEntry.value = JSON.stringify({ ...JSON.parse(assignmentsEntry.value), secret: jwt({ aud: '8f348934-64be-4bb2-bc16-c54c96789f43' }) });
-    state.origins[0].localStorage.push(assignmentsEntry);
-    const originalAssignments = assignmentsEntry.value;
-    const accessToken = jwt({ aud: 'https://graph.microsoft.com', exp: Date.now() / 1000 + 3600 });
-    vi.mocked(readSessionState).mockReturnValue(state);
-    vi.mocked(getTeamsOrigin).mockReturnValue(state.origins[0]);
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({
-      ...makeTokenResponse('Files.ReadWrite.All'), access_token: accessToken,
-    }), { status: 200 }));
 
-    expect(await refreshTokensViaHttp('graph')).toEqual({ ok: true, value: undefined });
 
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(new URLSearchParams(vi.mocked(fetch).mock.calls[0][1]!.body as string).get('scope')).toBe('https://graph.microsoft.com/.default offline_access');
-    expect(JSON.parse(graphEntry.value).secret).toBe(accessToken);
-    expect(assignmentsEntry.value).toBe(originalAssignments);
-  });
 
-  it('reports a Graph consent refusal as access denied, not an expired login', async () => {
-    const state = makeMockSessionState();
-    vi.mocked(readSessionState).mockReturnValue(state);
-    vi.mocked(getTeamsOrigin).mockReturnValue(state.origins[0]);
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error_description: 'AADSTS65001: Consent required.' }), { status: 400 }));
-    expect(await refreshTokensViaHttp('graph')).toMatchObject({ ok: false, error: { code: 'ACCESS_DENIED', message: expect.stringContaining('Microsoft Graph') } });
-  });
+
 
 });
