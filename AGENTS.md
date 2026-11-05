@@ -9,7 +9,7 @@ Non-obvious project knowledge for AI agents. This is not a tool reference: tool 
 
 ## Project Overview
 
-An MCP (Model Context Protocol) server that lets AI assistants interact with Microsoft Teams. Instead of the Microsoft Graph API, it calls Teams' own APIs (Substrate, chatsvc, CSA) using tokens extracted from a browser session. The browser is only used for initial login; all operations are direct API calls.
+An MCP (Model Context Protocol) server that lets AI assistants interact with Microsoft Teams. Instead of the Microsoft Graph API, it calls Teams' own APIs (Substrate, chatsvc, CSA) using tokens extracted from a browser session. The browser handles interactive login and assignment attachments/SharePoint downloads. Most messaging and search operations use direct Teams APIs.
 
 ## Directory Structure
 
@@ -56,7 +56,7 @@ src/
 │   ├── files-api.ts      # Shared files (Substrate AllFiles)
 │   ├── tags-api.ts       # Channel tags (mt/part teams/{groupId}/tags)
 │   ├── assignments-api.ts # EDU Assignments (assignments.edu.cloud.microsoft, OneNote EDU)
-│   ├── graph-files-api.ts # File downloads via Microsoft Graph (shared files and assignment attachments)
+│   ├── browser-files-api.ts # SharePoint web download via signed-in Playwright browser
 │   └── profile-api.ts    # Resolve MRIs to profiles (middleTier fetchShortProfile)
 ├── browser/              # Playwright browser automation (login only)
 │   ├── context.ts        # Persistent browser profile management
@@ -123,7 +123,7 @@ The server uses the system browser via Playwright's `launchPersistentContext()` 
 
 Refresh uses an HTTP-first strategy in `token-refresh-http.ts`:
 
-1. **HTTP (~1s)**: Extract the MSAL refresh token from session state and POST to Azure AD's OAuth2 token endpoint for each required scope (Substrate, Skype Spaces, and chatsvcagg). Optional resources (EDU Assignments and Microsoft Graph) are acquired separately, on demand, so users who never call those tools incur no extra OAuth call. The Teams host client (`5e3ce6c0-…`) can mint both tokens directly; Teams web also caches its own Graph token (`Files.ReadWrite.All`), which is reused while valid. Optional auth can never block the rest of Teams: it uses a single HTTP exchange, never launches a browser or refreshes core credentials, and never returns `AUTH_REQUIRED`/`AUTH_EXPIRED` (which would trigger the server's auto-login). Optional tokens are selected by JWT audience, not MSAL target, because Graph and Assignments grant overlapping permission names. Definitive refusals are remembered for 30 minutes, per resource. Exchange the Skype Spaces token for the `skypetoken_asm` cookie via `authsvc.teams.microsoft.com/v1.0/authz`. Write updated tokens back to session state in MSAL cache format so `token-extractor.ts` finds them. The `Origin: https://teams.microsoft.com` header is required (the Teams client ID is a SPA; without it Azure AD returns AADSTS9002327).
+1. **HTTP (~1s)**: Extract the MSAL refresh token from session state and POST to Azure AD's OAuth2 token endpoint for each required scope (Substrate, Skype Spaces, and chatsvcagg). The optional EDU Assignments token is acquired on demand; this build never requests a Graph token. The Teams host client (`5e3ce6c0-…`) can mint both tokens directly; There is no Microsoft Graph integration in this build. Optional auth can never block the rest of Teams: it uses a single HTTP exchange, never launches a browser or refreshes core credentials, and never returns `AUTH_REQUIRED`/`AUTH_EXPIRED` (which would trigger the server's auto-login). The optional Assignments token is selected by JWT audience. Definitive refusals are remembered for 30 minutes, per resource. Exchange the Skype Spaces token for the `skypetoken_asm` cookie via `authsvc.teams.microsoft.com/v1.0/authz`. Write updated tokens back to session state in MSAL cache format so `token-extractor.ts` finds them. The `Origin: https://teams.microsoft.com` header is required (the Teams client ID is a SPA; without it Azure AD returns AADSTS9002327).
 2. **Browser fallback (~8s)**: If HTTP fails (e.g. refresh token expired, Conditional Access), a headless browser uses the persistent profile's session cookies for silent SSO.
 
 Both are seamless (no window, no interaction). If both fail, the user must re-authenticate via `teams_login`. First login always needs a browser (no refresh token yet). Works identically for standard MS login and corporate SSO (ADFS/Okta federation). Test with `npm run cli -- login`.
@@ -142,7 +142,7 @@ Different Teams APIs use different auth mechanisms:
 | **Files** (Substrate AllFiles) | Substrate JWT + message auth for user MRI | `getValidSubstrateToken()` + `extractMessageAuth()` |
 | **Profiles** (mt/part fetchShortProfile) | Skype Spaces token + `skypetoken_asm` | `requireSkypeSpacesAuthWithConfig()` |
 | **Tags** (mt/part teams/{groupId}/tags) | Skype Spaces token + `skypetoken_asm` | `requireSkypeSpacesAuth()` |
-| **File downloads** (Graph drive items; SharePoint URLs resolved via `/shares`) | Teams client's Graph JWT (aud `https://graph.microsoft.com`); the resulting `downloadUrl` is pre-authenticated and gets no header | `requireGraphTokenAsync()` |
+| **File downloads** (SharePoint HTTPS web links) | Existing authenticated Playwright browser | `downloadFile()` in `browser-files-api.ts` |
 | **Assignments** (assignments.edu.cloud.microsoft) | JWT Bearer for the Assignments app (aud `8f348934-…`) + `MS-Int-AppID: assignments-ui` header | `requireAssignmentsTokenAsync()` |
 
 The `extract*`/`getValid*` helpers live in `auth/token-extractor`; the `require*` guards live in `utils/auth-guards`. Notes:
