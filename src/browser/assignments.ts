@@ -216,11 +216,14 @@ export async function attachAssignmentFile(
       await fileChooser.setFiles(resolvedPath);
     }
 
-    log.info('assignments-browser', 'Waiting for file upload to process in Teams...');
-    await page.waitForTimeout(14000);
-
-    const bodyText = await frame.evaluate(() => document.body.innerText);
-    const uploadConfirmed = bodyText.includes(fileName);
+    // Wait for the actual attachment marker, not a fixed 14-second pause.
+    // This returns as soon as Teams renders the file and times out on failure.
+    log.info('assignments-browser', 'Waiting for the uploaded file to appear...');
+    const uploadConfirmed = await frame.waitForFunction(
+      (name: string) => document.body.innerText.includes(name),
+      fileName,
+      { timeout: 30000 }
+    ).then(() => true).catch(() => false);
     if (!uploadConfirmed) {
       return err(createError(ErrorCode.API_ERROR,
         `Upload of "${fileName}" could not be confirmed in Teams. Check the assignment before attempting another upload or turn-in.`,
