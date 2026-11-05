@@ -14,7 +14,7 @@
  */
 
 import { chromium, firefox, type BrowserContext, type Page } from 'playwright';
-import { execFileSync, execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -59,7 +59,10 @@ function isProcessRunning(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
-  } catch {
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'EPERM') {
+      return true;
+    }
     return false;
   }
 }
@@ -261,7 +264,7 @@ export function resolveBrowserDetailsFromName(name: string): ResolvedBrowserConf
 export function getWindowsDefaultBrowser(): ResolvedBrowserConfig | undefined {
   const queryCommand = (subKey: string): string | undefined => {
     try {
-      const out = execSync(`reg query "${subKey}" /ve`, {
+      const out = execFileSync('reg.exe', ['query', subKey, '/ve'], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
         windowsHide: true,
@@ -275,8 +278,14 @@ export function getWindowsDefaultBrowser(): ResolvedBrowserConfig | undefined {
 
   const queryProgId = (protocol: string): string | undefined => {
     try {
-      const out = execSync(
-        `reg query "HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\${protocol}\\UserChoice" /v ProgId`,
+      const out = execFileSync(
+        'reg.exe',
+        [
+          'query',
+          `HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\${protocol}\\UserChoice`,
+          '/v',
+          'ProgId',
+        ],
         { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }
       );
       const match = out.match(/ProgId\s+REG_SZ\s+(\S+)/);
@@ -313,7 +322,7 @@ export function getWindowsDefaultBrowser(): ResolvedBrowserConfig | undefined {
   // 2. Fallback: StartMenuInternet in HKCU or HKLM
   for (const root of ['HKCU', 'HKLM']) {
     try {
-      const out = execSync(`reg query "${root}\\Software\\Clients\\StartMenuInternet" /ve`, {
+      const out = execFileSync('reg.exe', ['query', `${root}\\Software\\Clients\\StartMenuInternet`, '/ve'], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
         windowsHide: true,
@@ -417,7 +426,7 @@ export function getLinuxDefaultBrowser(): ResolvedBrowserConfig | undefined {
 
   // 1. Try xdg-settings
   try {
-    const out = execSync('xdg-settings get default-web-browser', {
+    const out = execFileSync('xdg-settings', ['get', 'default-web-browser'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
@@ -432,7 +441,7 @@ export function getLinuxDefaultBrowser(): ResolvedBrowserConfig | undefined {
   if (!desktopName) {
     for (const scheme of ['x-scheme-handler/https', 'x-scheme-handler/http', 'text/html']) {
       try {
-        const out = execSync(`xdg-mime query default ${scheme}`, {
+        const out = execFileSync('xdg-mime', ['query', 'default', scheme], {
           encoding: 'utf8',
           stdio: ['ignore', 'pipe', 'ignore'],
         }).trim();
@@ -502,8 +511,9 @@ export function getLinuxDefaultBrowser(): ResolvedBrowserConfig | undefined {
  */
 export function getDarwinDefaultBrowser(): ResolvedBrowserConfig | undefined {
   try {
-    const bundleId = execSync(
-      `osascript -e 'id of app (default application to open url "https://teams.microsoft.com")'`,
+    const bundleId = execFileSync(
+      'osascript',
+      ['-e', 'id of app (default application to open url "https://teams.microsoft.com")'],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
     ).trim();
 

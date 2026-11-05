@@ -369,6 +369,23 @@ describe('httpRequest', () => {
       expect(result.value.data).toBe('no content type');
     }
   });
+
+  it('returns API_ERROR when application/json response has invalid JSON', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response('<html>Bad Gateway</html>', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    const result = await httpRequest('https://api.example.com/malformed-json');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('API_ERROR');
+      expect(result.error.message).toContain('Failed to parse JSON response');
+    }
+  });
 });
 
 describe('clearRateLimitState', () => {

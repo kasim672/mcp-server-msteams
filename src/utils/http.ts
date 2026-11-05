@@ -151,7 +151,19 @@ async function fetchWithTimeout<T>(
     
     if (contentType.includes('application/json')) {
       const text = await response.text();
-      data = text ? JSON.parse(text) as T : {} as T;
+      if (!text || text.trim().length === 0) {
+        data = {} as T;
+      } else {
+        try {
+          data = JSON.parse(text) as T;
+        } catch (parseError) {
+          return err(createError(
+            ErrorCode.API_ERROR,
+            `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+            { retryable: false }
+          ));
+        }
+      }
     } else {
       data = await response.text() as unknown as T;
     }
