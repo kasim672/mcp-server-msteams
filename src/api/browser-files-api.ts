@@ -51,7 +51,7 @@ export async function downloadFile(url: string, outputPath: string): Promise<Res
   try {
     manager = await createBrowserContext({ headless: true });
     const page = manager.page;
-    const incoming = page.waitForEvent('download', { timeout: 30000 });
+    const incoming = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
 
     // Direct links can trigger a download before navigation completes. A
     // cancelled navigation in this one case is expected.
@@ -66,6 +66,11 @@ export async function downloadFile(url: string, outputPath: string): Promise<Res
       await button.click();
     }
     const download = await incoming;
+    if (!download) {
+      return err(createError(ErrorCode.API_ERROR,
+        'No file download started. This SharePoint viewer may require a manual download in your browser.',
+        { retryable: false }));
+    }
     const failure = await download.failure();
     if (failure) {
       return err(createError(ErrorCode.API_ERROR, `Browser download failed: ${failure}`, { retryable: false }));
