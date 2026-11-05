@@ -13,7 +13,6 @@ import {
   extractCsaToken,
   extractSubstrateToken,
   extractAssignmentsToken,
-  extractGraphToken,
   extractSkypeSpacesToken,
   extractRegionConfig,
   getUserProfile,
@@ -23,7 +22,7 @@ import {
 import { clearTokenCache } from '../auth/session-store.js';
 import { DEFAULT_TEAMS_BASE_URL } from './api-config.js';
 import { TOKEN_REFRESH_THRESHOLD_MS, ASSIGNMENTS_UNAVAILABLE_TTL_MS } from '../constants.js';
-import { refreshTokensViaBrowser, refreshAssignmentsToken, refreshGraphToken } from '../auth/token-refresh.js';
+import { refreshTokensViaBrowser, refreshAssignmentsToken } from '../auth/token-refresh.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Guard Types
@@ -61,7 +60,7 @@ export async function requireSubstrateTokenAsync(): Promise<Result<string, McpEr
 }
 
 /**
- * Guard for an optional, on-demand token (Assignments, Graph). Returns a cached
+ * Guard for the optional, on-demand Assignments token. Returns a cached
  * token while fresh, refreshes it at most once concurrently, and briefly
  * remembers definitive access refusals so non-entitled accounts pay no repeat cost.
  */
@@ -97,22 +96,15 @@ function onDemandTokenGuard(
 }
 
 const assignmentsGuard = onDemandTokenGuard(extractAssignmentsToken, refreshAssignmentsToken);
-const graphGuard = onDemandTokenGuard(extractGraphToken, refreshGraphToken);
 
 /** Forget remembered refusals for optional resources; called on explicit login. */
 export function resetAssignmentsAvailability(): void {
   assignmentsGuard.reset();
-  graphGuard.reset();
 }
 
 /** Require the EDU Assignments token, preserving auth, access and transient errors. */
 export function requireAssignmentsTokenAsync(): Promise<Result<string, McpError>> {
   return assignmentsGuard.require();
-}
-
-/** Require a Microsoft Graph token (optional; used for file downloads). */
-export function requireGraphTokenAsync(): Promise<Result<string, McpError>> {
-  return graphGuard.require();
 }
 
 /**
