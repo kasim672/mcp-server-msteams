@@ -23,7 +23,6 @@ import { type Result, ok, err } from '../types/result.js';
 import {
   extractSubstrateToken,
   getValidAssignmentsToken,
-  getValidGraphToken,
 } from './token-extractor.js';
 import { clearTokenCache } from './session-store.js';
 import { refreshTokensViaHttp, type OnDemandResource } from './token-refresh-http.js';
@@ -73,11 +72,6 @@ function refreshOnDemandToken(resource: OnDemandResource, label: string, getVali
 /** Acquire the optional EDU Assignments token. */
 export function refreshAssignmentsToken(): Promise<Result<string>> {
   return refreshOnDemandToken('assignments', 'Assignments', getValidAssignmentsToken);
-}
-
-/** Acquire the optional Microsoft Graph token (used for file downloads). */
-export function refreshGraphToken(): Promise<Result<string>> {
-  return refreshOnDemandToken('graph', 'Microsoft Graph', getValidGraphToken);
 }
 
 async function refreshCoreTokens(): Promise<Result<void>> {
