@@ -189,7 +189,7 @@ The server exposes **30+ tools** to AI agents via MCP, each available as a direc
 | :--- | :--- | :--- | :--- |
 | `teams_list_assignments` | `msteams assignments` | `--status <active\|completed\|all>` | List coursework across classes with due dates, grades, and submission state. |
 | `teams_get_assignment` | `msteams assignment` | `--classId <id> --assignmentId <id>` | Get detailed assignment instructions, attached files, rubrics, and submission info. |
-| `teams_attach_file` | `msteams attach_file` | `--classId <id> --assignmentId <id> --filePath <path> [--turnIn]` | **Upload and attach a local file** directly to an assignment submission via Playwright automation, with optional instant turn-in. |
+| `teams_attach_file` | `msteams attach_file` | `--classId <id> --assignmentId <id> --filePath <path> [--turnIn]` | Attach a local file through Playwright; optional turn-in uses an API-verified submission state and requires classId + assignmentId. |
 | `teams_remove_attachment` | `msteams remove_attachment` | `--classId <id> --assignmentId <id> [--fileName <name>]` | Remove an uploaded attachment from a working submission. |
 | `teams_submission_action` | `msteams submission_action` | `--action <submit\|unsubmit\|view> --classId <id> --assignmentId <id> --submissionId <id>` | Turn in an assignment, undo turn-in, or mark as viewed. |
 
@@ -278,7 +278,7 @@ msteams attach_file \
   --filePath "/path/to/report.pdf" \
   --turnIn
 ```
-*Playwright launches headless Chromium, navigates directly to the student portal, uploads the file, verifies the attachment DOM element, and triggers the Turn In button.*
+*Playwright opens the Teams assignment, uploads the file, and checks whether the attachment appears. For `--turnIn`, supply `--classId` and `--assignmentId` (the submission ID is resolved if omitted). The server uses the Assignments API to confirm the final submitted status instead of assuming an on-screen click succeeded. If attachment or turn-in verification fails, inspect the assignment in Teams before repeating the action.*
 
 ### Step 4: Undo Turn-In or Remove Attachment (If needed)
 ```bash
@@ -426,7 +426,7 @@ npm run lint
 ## Security &amp; Encryption
 
 - **No Third-Party Relays**: Every API request communicates directly from your machine to Microsoft's official cloud endpoints (`*.microsoft.com`, `*.office.com`).
-- **Encrypted Local Storage**: Cached tokens and session states are encrypted with **AES-256-GCM** using local machine salt and hardware-derived keys.
+- **Encrypted Local Storage**: Cached tokens and session states are encrypted with **AES-256-GCM** using a key derived from the computer hostname and OS username. This is not hardware-backed protection; protect access to your OS account and local profile.
 - **Owner-Only File Permissions**: On Linux and macOS, the session directory is created with `0o700` (`rwx------`) and files with `0o600` (`rw-------`).
 - **No Credential Escalation**: The server operates strictly within the permissions of your logged-in Microsoft Teams account.
 
