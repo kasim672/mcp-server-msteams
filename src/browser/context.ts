@@ -783,12 +783,39 @@ export async function createBrowserContext(
 }
 
 /**
+ * Checks if an error indicates that the browser, context, or page has been closed.
+ */
+export function isBrowserClosedError(error: unknown): boolean {
+  if (!error) return false;
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    msg.includes('target page, context or browser has been closed') ||
+    msg.includes('target closed') ||
+    msg.includes('browser has been closed') ||
+    msg.includes('context has been closed') ||
+    msg.includes('page has been closed') ||
+    msg.includes('browser closed') ||
+    msg.includes('session closed') ||
+    msg.includes('connection closed')
+  );
+}
+
+/**
  * Saves the current browser context's session state.
  */
-export async function saveSessionState(context: BrowserContext): Promise<void> {
-  const state = await context.storageState();
-  writeSessionState(state);
-  clearRegionCache();
+export async function saveSessionState(context: BrowserContext): Promise<boolean> {
+  try {
+    const state = await context.storageState();
+    writeSessionState(state);
+    clearRegionCache();
+    return true;
+  } catch (err) {
+    if (isBrowserClosedError(err)) {
+      log.debug('browser', 'Browser context is closed; skipped saving storage state.');
+      return false;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -799,7 +826,15 @@ export async function closeBrowser(
   saveSession: boolean = true
 ): Promise<void> {
   if (saveSession) {
-    await saveSessionState(manager.context);
+    try {
+      await saveSessionState(manager.context);
+    } catch (err) {
+      log.debug('browser', `Could not save session state on close: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
-  await manager.context.close();
+  try {
+    await manager.context.close();
+  } catch (err) {
+    log.debug('browser', `Could not close browser context: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }

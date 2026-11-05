@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   findDefaultBrowser,
   getBrowserLaunchConfig,
   resolveBrowserDetailsFromName,
   resolveBrowserDetailsFromPath,
   safeResolveExecutable,
+  isBrowserClosedError,
+  closeBrowser,
+  saveSessionState,
 } from './context.js';
 
 describe('resolveBrowserDetailsFromPath', () => {
@@ -178,6 +181,49 @@ describe('safeResolveExecutable', () => {
   it('resolves known binaries in PATH safely without shell', () => {
     const resolved = safeResolveExecutable('node') || safeResolveExecutable('node.exe');
     expect(resolved).toBeTruthy();
+  });
+});
+
+describe('isBrowserClosedError', () => {
+  it('identifies browser closed errors correctly', () => {
+    expect(isBrowserClosedError(new Error('Target page, context or browser has been closed'))).toBe(true);
+    expect(isBrowserClosedError(new Error('browserContext.storageState: Target page, context or browser has been closed'))).toBe(true);
+    expect(isBrowserClosedError(new Error('Target closed'))).toBe(true);
+    expect(isBrowserClosedError(new Error('Protocol error (Runtime.callFunctionOn): Session closed.'))).toBe(true);
+    expect(isBrowserClosedError(new Error('page has been closed'))).toBe(true);
+    expect(isBrowserClosedError(new Error('Unrelated error: network failed'))).toBe(false);
+    expect(isBrowserClosedError(null)).toBe(false);
+    expect(isBrowserClosedError(undefined)).toBe(false);
+  });
+});
+
+describe('saveSessionState and closeBrowser resilient error handling', () => {
+  it('saveSessionState returns false and does not throw when browser is already closed', async () => {
+    const context = {
+      storageState: vi.fn().mockRejectedValue(new Error('Target page, context or browser has been closed')),
+    };
+
+    const result = await saveSessionState(context as never);
+    expect(result).toBe(false);
+  });
+
+  it('closeBrowser safely closes without throwing even if context.storageState throws', async () => {
+    const context = {
+      storageState: vi.fn().mockRejectedValue(new Error('Target page, context or browser has been closed')),
+      close: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await expect(closeBrowser({ context } as never, true)).resolves.not.toThrow();
+    expect(context.close).toHaveBeenCalled();
+  });
+
+  it('closeBrowser safely handles when both storageState and context.close throw', async () => {
+    const context = {
+      storageState: vi.fn().mockRejectedValue(new Error('Target page, context or browser has been closed')),
+      close: vi.fn().mockRejectedValue(new Error('browser has been closed')),
+    };
+
+    await expect(closeBrowser({ context } as never, true)).resolves.not.toThrow();
   });
 });
 

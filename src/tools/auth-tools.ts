@@ -27,6 +27,7 @@ import { createBrowserContext, closeBrowser } from '../browser/context.js';
 import * as log from '../utils/logger.js';
 import { resetAssignmentsAvailability, clearRegionCache } from '../utils/auth-guards.js';
 import { ensureAuthenticated } from '../browser/auth.js';
+import { createError, ErrorCode } from '../types/errors.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Schemas
@@ -161,9 +162,21 @@ async function loginInVisibleBrowser(): Promise<ToolResult> {
   const visible = await createBrowserContext({ headless: false });
   try {
     await ensureAuthenticated(visible.page, visible.context, (msg) => log.info('login', msg));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      error: createError(ErrorCode.AUTH_REQUIRED, message, {
+        suggestions: [
+          'Keep the browser window open until sign-in completes and the window closes automatically',
+          'If running in an Administrator terminal (e.g. C:\\WINDOWS\\system32), switch to a standard non-elevated terminal',
+          'Try specifying a browser explicitly: set TEAMS_BROWSER=chrome or TEAMS_BROWSER=edge',
+        ],
+      }),
+    };
   } finally {
     // Close browser after login - we only need the saved session/tokens
-    await closeBrowser(visible, true);
+    await closeBrowser(visible, true).catch(() => {});
   }
 
   await fillCoreCredentialGaps();

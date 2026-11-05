@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Page } from 'playwright';
 
-vi.mock('./context.js', () => ({ saveSessionState: vi.fn() }));
+vi.mock('./context.js', () => ({
+  saveSessionState: vi.fn(async () => true),
+  isBrowserClosedError: vi.fn((err: unknown) => String(err).includes('closed')),
+}));
 vi.mock('../auth/token-extractor.js', () => ({ extractSubstrateToken: vi.fn() }));
 
 import { ensureAuthenticated, getAuthStatus, isTeamsUrl } from './auth.js';
@@ -75,5 +78,43 @@ describe('ensureAuthenticated', () => {
     expect(messages).toContain('Waiting for manual login...');
     expect(messages).toContain('Authentication successful!');
     expect(tokenMinutes).toEqual([55]);
+  });
+
+  it('throws a friendly error when user closes the browser window before login completes', async () => {
+    const page = {
+      goto: async () => null,
+      waitForURL: async () => { throw new Error('timeout'); },
+      url: () => 'https://login.microsoftonline.com/',
+      evaluate: async () => -1,
+      waitForTimeout: async () => {
+        throw new Error('Target page, context or browser has been closed');
+      },
+    } as unknown as Page;
+
+    await expect(
+      ensureAuthenticated(page, {} as never, () => {}, false, false)
+    ).rejects.toThrow(/Browser window was closed before sign-in completed/);
+  });
+
+  it('treats closed browser as success if valid tokens were already extracted and saved', async () => {
+    const { extractSubstrateToken } = await import('../auth/token-extractor.js');
+    vi.mocked(extractSubstrateToken).mockReturnValue({
+      token: 'valid.jwt',
+      expiry: new Date(Date.now() + 3600000),
+    } as never);
+
+    const page = {
+      goto: async () => null,
+      waitForURL: async () => { throw new Error('timeout'); },
+      url: () => 'https://login.microsoftonline.com/',
+      evaluate: async () => -1,
+      waitForTimeout: async () => {
+        throw new Error('Target page, context or browser has been closed');
+      },
+    } as unknown as Page;
+
+    const messages: string[] = [];
+    await ensureAuthenticated(page, {} as never, msg => messages.push(msg), false, false);
+    expect(messages).toContain('Valid session token was preserved before browser was closed.');
   });
 });

@@ -4,7 +4,7 @@
  */
 
 import type { Page, BrowserContext } from 'playwright';
-import { saveSessionState } from './context.js';
+import { saveSessionState, isBrowserClosedError } from './context.js';
 import {
   OVERLAY_STEP_PAUSE_MS,
   OVERLAY_COMPLETE_PAUSE_MS,
@@ -244,18 +244,40 @@ export function isTeamsUrl(url: string): boolean {
  * silently failing with an invisible browser stuck on an unexpected page.
  */
 async function navigateToTeams(page: Page): Promise<AuthStatus> {
-  await page.goto(TEAMS_URL, { waitUntil: 'domcontentloaded' });
+  try {
+    await page.goto(TEAMS_URL, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    if (isBrowserClosedError(err)) {
+      throw new Error('Browser window was closed before Teams could load. Please run teams_login again and leave the browser window open.');
+    }
+    throw err;
+  }
 
   // Login redirect happens ~3-4 seconds after navigation when the session is
   // invalid (MSAL tries silent auth first, then redirects). No redirect within
   // the timeout = session valid.
-  const redirectDetected = await page.waitForURL(url => isLoginUrl(url.href), {
-    timeout: LOGIN_REDIRECT_TIMEOUT_MS,
-    waitUntil: 'commit',
-  }).then(() => true, () => false);
+  let redirectDetected = false;
+  try {
+    redirectDetected = await page.waitForURL(url => isLoginUrl(url.href), {
+      timeout: LOGIN_REDIRECT_TIMEOUT_MS,
+      waitUntil: 'commit',
+    }).then(() => true, () => false);
+  } catch (err) {
+    if (isBrowserClosedError(err)) {
+      throw new Error('Browser window was closed during login. Please run teams_login again and leave the browser window open.');
+    }
+  }
 
   // Check final state
-  const currentUrl = page.url();
+  let currentUrl = '';
+  try {
+    currentUrl = page.url();
+  } catch (err) {
+    if (isBrowserClosedError(err)) {
+      throw new Error('Browser window was closed during login. Please run teams_login again and leave the browser window open.');
+    }
+    throw err;
+  }
   
   // Definitely on login page
   if (redirectDetected || isLoginUrl(currentUrl)) {
@@ -309,14 +331,27 @@ async function waitForManualLogin(
   log('Waiting for manual login...');
 
   while (Date.now() - startTime < MANUAL_LOGIN_TIMEOUT_MS) {
-    const status = await getAuthStatus(page);
+    let status: AuthStatus;
+    try {
+      status = await getAuthStatus(page);
+    } catch (err) {
+      if (isBrowserClosedError(err)) {
+        const token = extractSubstrateToken();
+        if (token && token.expiry.getTime() > Date.now()) {
+          log('Valid session token was preserved before browser was closed.');
+          return;
+        }
+        throw new Error('Browser window was closed before sign-in completed. Please run teams_login again and keep the browser window open until authentication finishes.');
+      }
+      throw err;
+    }
 
     if (status.isAuthenticated) {
       log('Authentication successful!');
 
       if (showOverlay) {
-        await showLoginProgress(page, 'signed-in', { pause: true });
-        await showLoginProgress(page, 'saving');
+        await Promise.resolve(showLoginProgress(page, 'signed-in', { pause: true })).catch(() => {});
+        await Promise.resolve(showLoginProgress(page, 'saving')).catch(() => {});
       }
 
       // Wait for MSAL to store tokens in localStorage before saving session.
@@ -325,27 +360,39 @@ async function waitForManualLogin(
       const tokensReady = await waitForTokenRefresh(page, context, onProgress);
       if (!tokensReady) {
         // Tokens didn't appear within timeout — save whatever state we have
-        await saveSessionState(context);
+        await Promise.resolve(saveSessionState(context)).catch(() => {});
       }
       log('Session state saved.');
 
       if (showOverlay) {
-        await showLoginProgress(page, 'complete', { pause: true });
+        await Promise.resolve(showLoginProgress(page, 'complete', { pause: true })).catch(() => {});
       }
 
       return;
     }
 
     // Check every 2 seconds
-    await page.waitForTimeout(2000);
+    try {
+      await page.waitForTimeout(2000);
+    } catch (err) {
+      if (isBrowserClosedError(err)) {
+        const token = extractSubstrateToken();
+        if (token && token.expiry.getTime() > Date.now()) {
+          log('Valid session token was preserved before browser was closed.');
+          return;
+        }
+        throw new Error('Browser window was closed before sign-in completed. Please run teams_login again and keep the browser window open until authentication finishes.');
+      }
+      throw err;
+    }
   }
 
   // Show error overlay before throwing (only if overlay enabled)
   if (showOverlay) {
-    await showLoginProgress(page, 'error', { pause: true });
+    await Promise.resolve(showLoginProgress(page, 'error', { pause: true })).catch(() => {});
   }
 
-  throw new Error('Authentication timeout: user did not complete login within the allowed time');
+  throw new Error('Authentication timeout: user did not complete login within the allowed time (5 minutes).');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -429,17 +476,32 @@ async function waitForTokenRefresh(
   
   while (Date.now() - startTime < TOKEN_REFRESH_WAIT_TIMEOUT_MS) {
     // Check localStorage directly in the browser (no disk I/O)
-    const minsRemaining = await checkBrowserTokenExpiry(page);
+    let minsRemaining = -1;
+    try {
+      minsRemaining = await checkBrowserTokenExpiry(page);
+    } catch (err) {
+      if (isBrowserClosedError(err)) {
+        log('Browser closed while waiting for token refresh.');
+        return false;
+      }
+    }
     
     if (minsRemaining > 0) {
       // Token found - save session state once
-      await saveSessionState(context);
+      await Promise.resolve(saveSessionState(context)).catch(() => {});
       log(`Token refresh detected (${minsRemaining} mins valid).`);
       return true;
     }
     
     // Wait and retry
-    await page.waitForTimeout(TOKEN_REFRESH_POLL_INTERVAL_MS);
+    try {
+      await page.waitForTimeout(TOKEN_REFRESH_POLL_INTERVAL_MS);
+    } catch (err) {
+      if (isBrowserClosedError(err)) {
+        log('Browser closed while waiting for token refresh.');
+        return false;
+      }
+    }
   }
   
   log('Token refresh timed out.');

@@ -31,6 +31,7 @@ import {
 } from '../auth/token-extractor.js';
 import { refreshTokensViaHttp } from '../auth/token-refresh-http.js';
 import { createBrowserContext, closeBrowser } from '../browser/context.js';
+import { ensureAuthenticated } from '../browser/auth.js';
 
 /** A session holding every core credential except the CSA (favourites) token. */
 function sessionMissingCsaToken(): void {
@@ -104,5 +105,20 @@ describe('teams_login core credential top-up', () => {
     const result = await loginTool.handler({ forceNew: false });
 
     expect(result.success).toBe(true);
+  });
+
+  it('returns clean error when visible browser login fails or is closed by user', async () => {
+    sessionMissingCsaToken();
+    vi.mocked(createBrowserContext).mockResolvedValue({ page: {}, context: {} } as never);
+    vi.mocked(ensureAuthenticated).mockRejectedValue(new Error('Browser window was closed before sign-in completed. Please run teams_login again and keep the browser window open until authentication finishes.'));
+    vi.mocked(closeBrowser).mockResolvedValue(undefined as never);
+
+    const result = await loginTool.handler({ forceNew: true });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain('Browser window was closed');
+      expect(result.error.suggestions).toBeDefined();
+    }
   });
 });
