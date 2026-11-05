@@ -45,6 +45,10 @@ function mockBrowser(visibleText: string) {
       throw new Error(`Unexpected selector: ${selector}`);
     }),
     evaluate: vi.fn(async () => visibleText),
+    waitForFunction: vi.fn(async () => {
+      if (!visibleText.includes('report.pdf')) throw new Error('File was not found');
+      return true;
+    }),
   };
   const page = {
     goto: vi.fn(async () => undefined),
