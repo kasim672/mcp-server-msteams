@@ -31,6 +31,26 @@ describe('Assignments tool input validation', () => {
     expect(AttachAssignmentFileInputSchema.safeParse({}).success).toBe(false);
   });
 
+  it.each([
+    'https://example.org/assignments',
+    'http://teams.microsoft.com/l/assignment',
+    'https://teams.microsoft.com.evil.example/assignment',
+    'https://user:pass@teams.microsoft.com/assignment',
+    'file:///etc/passwd',
+  ])('rejects untrusted assignment link: %s', (assignmentUrl) => {
+    expect(AttachAssignmentFileInputSchema.safeParse({ filePath: 'C:/test.pdf', assignmentUrl }).success).toBe(false);
+    expect(RemoveAssignmentAttachmentInputSchema.safeParse({ assignmentUrl }).success).toBe(false);
+  });
+
+  it.each([
+    'https://teams.microsoft.com/l/assignment',
+    'https://teams.cloud.microsoft/l/assignment',
+    'https://assignments.edu.cloud.microsoft/assignment',
+  ])('accepts Teams assignment link: %s', (assignmentUrl) => {
+    expect(AttachAssignmentFileInputSchema.safeParse({ filePath: 'C:/test.pdf', assignmentUrl }).success).toBe(true);
+    expect(RemoveAssignmentAttachmentInputSchema.safeParse({ assignmentUrl }).success).toBe(true);
+  });
+
   it('validates remove attachment input', () => {
     expect(
       RemoveAssignmentAttachmentInputSchema.safeParse({
