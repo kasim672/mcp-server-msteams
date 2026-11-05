@@ -4,6 +4,7 @@ import {
   getBrowserLaunchConfig,
   resolveBrowserDetailsFromName,
   resolveBrowserDetailsFromPath,
+  safeResolveExecutable,
 } from './context.js';
 
 describe('resolveBrowserDetailsFromPath', () => {
@@ -152,3 +153,31 @@ describe('findDefaultBrowser', () => {
     }
   });
 });
+
+describe('safeResolveExecutable', () => {
+  it('rejects tokens containing shell metacharacters', () => {
+    expect(safeResolveExecutable('firefox; rm -rf /')).toBeUndefined();
+    expect(safeResolveExecutable('google-chrome && whoami')).toBeUndefined();
+    expect(safeResolveExecutable('brave | cat')).toBeUndefined();
+    expect(safeResolveExecutable('browser`id`')).toBeUndefined();
+    expect(safeResolveExecutable('$(evil)')).toBeUndefined();
+    expect(safeResolveExecutable('test > file')).toBeUndefined();
+    expect(safeResolveExecutable('bad\ncmd')).toBeUndefined();
+    expect(safeResolveExecutable('')).toBeUndefined();
+  });
+
+  it('resolves absolute path if file exists', () => {
+    const nodeExe = process.execPath;
+    expect(safeResolveExecutable(nodeExe)).toBe(nodeExe);
+  });
+
+  it('returns undefined for non-existent absolute path', () => {
+    expect(safeResolveExecutable('/non/existent/path/to/binary/definitely_not_here_12345')).toBeUndefined();
+  });
+
+  it('resolves known binaries in PATH safely without shell', () => {
+    const resolved = safeResolveExecutable('node') || safeResolveExecutable('node.exe');
+    expect(resolved).toBeTruthy();
+  });
+});
+

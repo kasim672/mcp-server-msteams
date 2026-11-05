@@ -14,7 +14,7 @@
  */
 
 import { chromium, firefox, type BrowserContext, type Page } from 'playwright';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -338,6 +338,77 @@ export function getWindowsDefaultBrowser(): ResolvedBrowserConfig | undefined {
 }
 
 /**
+ * Safely resolves an executable token to an absolute path without shell interpolation.
+ * Avoids passing unverified tokens through a shell (prevents command injection).
+ */
+export function safeResolveExecutable(token: string): string | undefined {
+  if (!token || typeof token !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  // 1. If it's already an absolute path, verify existence directly
+  if (path.isAbsolute(trimmed)) {
+    try {
+      if (fs.existsSync(trimmed) && fs.statSync(trimmed).isFile()) {
+        return trimmed;
+      }
+    } catch {
+      return undefined;
+    }
+  }
+
+  // 2. Reject tokens containing shell metacharacters or whitespace
+  if (/[\s;`$><|&!()\\]/.test(trimmed)) {
+    return undefined;
+  }
+
+  // 3. Search directories in PATH safely without shell
+  const envPath = process.env.PATH || '';
+  const searchDirs = Array.from(
+    new Set([
+      ...envPath.split(path.delimiter).filter(Boolean),
+      '/usr/bin',
+      '/bin',
+      '/usr/local/bin',
+      '/snap/bin',
+    ])
+  );
+
+  for (const dir of searchDirs) {
+    const candidate = path.join(dir, trimmed);
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    } catch {
+      // Continue searching
+    }
+  }
+
+  // 4. Safely query 'which' without spawning a shell (args passed separately to execve)
+  if (process.platform !== 'win32') {
+    try {
+      const out = execFileSync('which', [trimmed], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+      if (out && fs.existsSync(out)) {
+        return out;
+      }
+    } catch {
+      // Ignore if 'which' fails or is not found
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Detects the default browser on Linux by querying xdg-settings or xdg-mime,
  * then parsing the registered .desktop file.
  */
@@ -412,20 +483,11 @@ export function getLinuxDefaultBrowser(): ResolvedBrowserConfig | undefined {
       const firstToken = tokens[0]?.replace(/^"|"$/g, '');
 
       if (firstToken) {
-        if (path.isAbsolute(firstToken) && fs.existsSync(firstToken)) {
-          return resolveBrowserDetailsFromPath(firstToken);
+        const resolved = safeResolveExecutable(firstToken);
+        if (resolved) {
+          return resolveBrowserDetailsFromPath(resolved);
         }
-        try {
-          const resolved = execSync(`which ${firstToken}`, {
-            encoding: 'utf8',
-            stdio: ['ignore', 'pipe', 'ignore'],
-          }).trim();
-          if (resolved && fs.existsSync(resolved)) {
-            return resolveBrowserDetailsFromPath(resolved);
-          }
-        } catch {
-          return resolveBrowserDetailsFromName(firstToken);
-        }
+        return resolveBrowserDetailsFromName(firstToken);
       }
     }
   } catch {

@@ -135,6 +135,111 @@ describe('httpRequest', () => {
     }
   });
 
+  it('times out if the response body stalls while reading', async () => {
+    vi.mocked(fetch).mockImplementation((_url, init) => {
+      const signal = init?.signal as AbortSignal;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        text: () => new Promise<string>((_, reject) => {
+          if (signal?.aborted) {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+            return;
+          }
+          signal?.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        }),
+      } as unknown as Response);
+    });
+
+    const result = await httpRequest('https://api.example.com/stalled-body', {
+      timeoutMs: 50,
+      maxRetries: 1,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('TIMEOUT');
+      expect(result.error.message).toContain('timed out after 50ms');
+    }
+  });
+
+  it('times out if an error response body stalls while reading', async () => {
+    vi.mocked(fetch).mockImplementation((_url, init) => {
+      const signal = init?.signal as AbortSignal;
+      return Promise.resolve({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers(),
+        text: () => new Promise<string>((_, reject) => {
+          if (signal?.aborted) {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+            return;
+          }
+          signal?.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        }),
+      } as unknown as Response);
+    });
+
+    const result = await httpRequest('https://api.example.com/stalled-error-body', {
+      timeoutMs: 50,
+      maxRetries: 1,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('TIMEOUT');
+      expect(result.error.message).toContain('timed out after 50ms');
+    }
+  });
+
+  it('cleans up timeout timer on successful completion', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    const result = await httpRequest('https://api.example.com/fast', {
+      timeoutMs: 5000,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it('cleans up timeout timer on error response completion', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    vi.mocked(fetch).mockResolvedValue(
+      new Response('Bad Request', { status: 400 })
+    );
+
+    const result = await httpRequest('https://api.example.com/bad', {
+      timeoutMs: 5000,
+      maxRetries: 1,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
   it('returns NETWORK_ERROR on ECONNRESET', async () => {
     vi.mocked(fetch).mockImplementation(() => 
       Promise.reject(new Error('ECONNRESET'))

@@ -128,12 +128,15 @@ async function fetchWithTimeout<T>(
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     // Handle error responses
     if (!response.ok) {
       const retryAfterMs = extractRetryAfter(response.headers);
-      const errorText = await response.text().catch(() => '');
+      const errorText = await response.text().catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw err;
+        }
+        return '';
+      });
       
       return err(createError(
         classifyHttpError(response.status, errorText),
@@ -160,8 +163,6 @@ async function fetchWithTimeout<T>(
     });
 
   } catch (error) {
-    clearTimeout(timeoutId);
-
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         return err(createError(
@@ -187,6 +188,8 @@ async function fetchWithTimeout<T>(
       error instanceof Error ? error.message : String(error),
       { retryable: false }
     ));
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

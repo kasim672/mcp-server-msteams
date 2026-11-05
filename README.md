@@ -193,46 +193,59 @@ The server exposes **30+ tools** to AI agents via MCP, each available as a direc
 | `teams_remove_attachment` | `msteams remove_attachment` | `--classId <id> --assignmentId <id> [--fileName <name>]` | Remove an uploaded attachment from a working submission. |
 | `teams_submission_action` | `msteams submission_action` | `--action <submit\|unsubmit\|view> --classId <id> --assignmentId <id> --submissionId <id>` | Turn in an assignment, undo turn-in, or mark as viewed. |
 
-### Messaging &amp; Chats
+### Messaging & Chats
 
 | MCP Tool Name | CLI Command | Parameters | Description |
 | :--- | :--- | :--- | :--- |
-| `teams_send_message` | `msteams send_message` | `--chatId <id> --content <text>` | Send a new message (supports Markdown tables and formatting). |
-| `teams_get_chat` | `msteams chat` | `--chatId <id> [--pageSize <n>]` | Read message history from a 1:1, group, or meeting chat. |
-| `teams_list_chats` | `msteams chats` | `[--pageSize <n>]` | List recent conversations with participant details and last message snippet. |
-| `teams_get_unread` | `msteams unread` | `[--limit <n>]` | Fetch all unread chats, channels, and mentions. |
-| `teams_get_thread` | `msteams thread` | `--channelId <id> --messageId <id>` | Fetch all replies in a specific channel conversation thread. |
-| `teams_edit_message` | `msteams edit_message` | `--chatId <id> --messageId <id> --content <text>` | Edit the text content of a previously sent message. |
-| `teams_delete_message` | `msteams delete_message`| `--chatId <id> --messageId <id>` | Delete a message sent by your user. |
-| `teams_mark_read` | `msteams mark_read` | `--chatId <id> --messageId <id>` | Update server-side read receipt state. |
-| `teams_wait_for_reply` | `msteams wait_for_reply`| `--chatId <id> [--timeoutMs <n>]` | Efficient long-polling for incoming responses from peers. |
+| `teams_get_chat` | `msteams chat <userId>` | `--userId <id>` *(alias: `--user`)* | Resolve or start a 1:1 direct chat with a person; returns conversation ID. |
+| `teams_list_chats` | `msteams chats` | `[--limit <n>]` | List recent conversations (1:1 chats, group chats, meetings, channels) newest activity first. |
+| `teams_get_thread` | `msteams thread` | `[--conversationId <id>] [--fromUrl <url>] [--threadRootId <id>] [--limit <n>] [--order <asc\|desc>] [--since <iso>] [--markRead]` *(alias: `--to`)* | Read message history from a Teams conversation or channel thread. |
+| `teams_send_message` | `msteams send_message <content>` | `[--conversationId <id>] [--replyToMessageId <id>] [--contentType <auto\|text\|html\|markdown>] [--subject <title>] [--scheduleAt <iso>]` *(aliases: `--to`, `--reply`)* | Send a message to a conversation (defaults to self-notes `48:notes`). Supports Markdown tables and @mentions. |
+| `teams_get_message` | `msteams message` | `--conversationId <id> --messageId <id>` *(aliases: `--to`, `--msg`)* | Get a single message by ID with full content and metadata. |
+| `teams_create_group_chat` | `msteams create_group_chat` | `--userIds <id1,id2,...> [--topic <title>]` | Create a new group chat with multiple people. |
+| `teams_edit_message` | `msteams edit_message` | `--conversationId <id> --messageId <id> --content <text> [--contentType <type>]` *(aliases: `--to`, `--msg`)* | Edit the text content of a message you previously sent. |
+| `teams_delete_message` | `msteams delete_message` | `--conversationId <id> --messageId <id>` *(aliases: `--to`, `--msg`)* | Delete a message sent by you (soft delete). |
+| `teams_get_unread` | `msteams unread` | `[--conversationId <id>]` *(alias: `--to`)* | Fetch unread conversation status across Teams or for a specific conversation. |
+| `teams_mark_read` | `msteams mark_read` | `--conversationId <id> --messageId <id>` *(aliases: `--to`, `--msg`)* | Mark a conversation as read up to a specific message. |
+| `teams_wait_for_reply` | `msteams wait_for_reply` | `[--conversationId <id>] [--fromUrl <url>] [--maxWaitSeconds <n>] [--intervalSeconds <n>] [--includeSelf]` *(alias: `--to`)* | Block/poll until a new message arrives in a conversation. |
+| `teams_get_activity` | `msteams activity` | `[--limit <n>] [--syncState <token>]` | Fetch your activity feed (mentions, reactions, replies, and notifications). |
+| `teams_search_emoji` | `msteams emoji <query>` | `--query <text>` | Search for emojis by name or keyword. |
+| `teams_add_reaction` | `msteams add_reaction` | `--conversationId <id> --messageId <id> --emoji <key>` *(aliases: `--to`, `--msg`)* | React to a message (`like`, `heart`, `laugh`, `surprised`, `sad`, `angry`, or custom emoji). |
+| `teams_remove_reaction` | `msteams remove_reaction` | `--conversationId <id> --messageId <id> --emoji <key>` *(aliases: `--to`, `--msg`)* | Remove an emoji reaction from a message. |
+| `teams_get_saved_messages` | `msteams saved_messages` | `[--limit <n>]` | List messages bookmarked/saved by the user. |
+| `teams_save_message` | `msteams save_message` | `--conversationId <id> --messageId <id> [--rootMessageId <id>]` *(aliases: `--to`, `--msg`)* | Bookmark/save a message in Teams. |
+| `teams_unsave_message` | `msteams unsave_message` | `--conversationId <id> --messageId <id> [--rootMessageId <id>]` *(aliases: `--to`, `--msg`)* | Remove a saved bookmark from a message. |
+| `teams_get_followed_threads` | `msteams followed_threads` | `[--limit <n>]` | List channel threads you are following in Teams. |
 
-### Search &amp; Emails
+### Search & Directory
 
 | MCP Tool Name | CLI Command | Parameters | Description |
 | :--- | :--- | :--- | :--- |
-| `teams_search` | `msteams search` | `--query <text> [--pageSize <n>]` | Semantic natural language search across messages, chats, and channels. |
-| `teams_search_email` | `msteams email` | `--query <text> [--pageSize <n>]` | Search your Exchange/Outlook inbox and sent mail from Teams context. |
-| `teams_search_people` | `msteams people` | `--query <text> [--limit <n>]` | Search institutional directory for colleagues, professors, and classmates. |
+| `teams_search` | `msteams search <query>` | `[--maxResults <n>] [--from <n>] [--size <n>]` | Semantic natural language search across messages, chats, and channels with query operators. |
+| `teams_search_email` | `msteams email <query>` | `[--maxResults <n>] [--from <n>] [--size <n>]` | Search your Exchange/Outlook inbox and sent mail from Teams context. |
+| `teams_find_channel` | `msteams channel <query>` | `[--limit <n>]` | Find Teams channels by name. |
+| `teams_search_people` | `msteams people <query>` | `[--limit <n>]` | Search institutional directory for colleagues, professors, and classmates by name or email. |
 
-### Files &amp; Meeting Transcripts
+### Files & Meeting Transcripts
 
 | MCP Tool Name | CLI Command | Parameters | Description |
 | :--- | :--- | :--- | :--- |
-| `teams_get_shared_files` | `msteams shared_files` | `--chatId <id>` | List files shared within a conversation with download URLs. |
-| `teams_download_file` | `msteams download_file` | `--fileUrl <url> --outputPath <path>` | Securely download SharePoint, OneDrive, or assignment files to local disk. |
-| `teams_get_meetings` | `msteams meetings` | `[--startTime <iso>] [--endTime <iso>]` | Retrieve upcoming and past calendar events and Teams meetings. |
-| `teams_get_transcript` | `msteams transcript` | `--meetingId <id>` | Download automated meeting transcripts with speaker timestamps. |
+| `teams_get_shared_files` | `msteams shared_files` | `--conversationId <id> [--pageSize <n>] [--skipToken <token>]` *(alias: `--to`)* | List files and links shared within a conversation with download URLs. |
+| `teams_download_file` | `msteams download_file` | `--url <url> --outputPath <path>` | Securely download SharePoint, OneDrive, or assignment files to local disk. |
+| `teams_get_meetings` | `msteams meetings` | `[--startDate <iso>] [--endDate <iso>] [--limit <n>]` | Retrieve upcoming and past calendar events and Teams meetings. |
+| `teams_get_transcript` | `msteams transcript` | `--threadId <id> [--meetingDate <iso>]` | Download automated meeting transcripts with speaker timestamps. |
+| `teams_get_tags` | `msteams tags` | `--teamId <id> [--query <text>]` | Get channel tags for a Teams team (used for `@mention` tags). |
 
-### People &amp; Contacts
+### People & Contacts
 
 | MCP Tool Name | CLI Command | Parameters | Description |
 | :--- | :--- | :--- | :--- |
 | `teams_get_me` | `msteams me` | *(None)* | Get profile details, tenant ID, and email of the logged-in user. |
-| `teams_get_person` | `msteams person` | `--userId <mri>` | Look up detailed job title, department, and contact info for a person. |
-| `teams_get_frequent_contacts`| `msteams frequent_contacts`| `[--limit <n>]` | Get the list of contacts you interact with most frequently. |
-| `teams_add_reaction` | `msteams add_reaction` | `--chatId <id> --messageId <id> --reactionType <type>` | React to a message (`like`, `heart`, `laugh`, `surprised`, `sad`, `angry`). |
-| `teams_remove_reaction` | `msteams remove_reaction` | `--chatId <id> --messageId <id> --reactionType <type>` | Remove a previously added reaction. |
+| `teams_get_person` | `msteams person <mri>` | `--mris <mri,mri...>` | Look up detailed job title, department, and contact info for people by MRI. |
+| `teams_get_frequent_contacts` | `msteams frequent_contacts` | `[--limit <n>]` | Get the list of contacts you interact with most frequently. |
+| `teams_get_favorites` | `msteams favorites` | *(None)* | Get your favourite/pinned conversations in Teams. |
+| `teams_add_favorite` | `msteams add_favorite` | `--conversationId <id>` *(alias: `--to`)* | Pin a conversation to favorites. |
+| `teams_remove_favorite` | `msteams remove_favorite` | `--conversationId <id>` *(alias: `--to`)* | Remove a conversation from favorites. |
 
 ---
 
