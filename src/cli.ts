@@ -91,7 +91,7 @@ async function run(argv: string[]): Promise<number> {
   try {
     const { tools } = await client.listTools();
     const names = tools.map(tool => tool.name);
-    const name = resolveToolName(names, command);
+    const name = resolveToolName(names, command ?? '');
     const tool = tools.find(t => t.name === name) as Tool;
     const label = shortName(names, name);
     const { args, json, help } = parseToolArgs(tool, rest, label);
