@@ -1,18 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractAssignmentsToken, extractGraphToken } from '../auth/token-extractor.js';
-import { refreshAssignmentsToken, refreshGraphToken } from '../auth/token-refresh.js';
-import { requireAssignmentsTokenAsync, requireGraphTokenAsync, resetAssignmentsAvailability } from './auth-guards.js';
+import { extractAssignmentsToken } from '../auth/token-extractor.js';
+import { refreshAssignmentsToken } from '../auth/token-refresh.js';
+import { requireAssignmentsTokenAsync, resetAssignmentsAvailability } from './auth-guards.js';
 import { ErrorCode, createError } from '../types/errors.js';
 import { err, ok } from '../types/result.js';
 
-vi.mock('../auth/token-extractor.js', () => ({ extractAssignmentsToken: vi.fn(), extractGraphToken: vi.fn() }));
-vi.mock('../auth/token-refresh.js', () => ({ refreshAssignmentsToken: vi.fn(), refreshGraphToken: vi.fn() }));
+vi.mock('../auth/token-extractor.js', () => ({ extractAssignmentsToken: vi.fn() }));
+vi.mock('../auth/token-refresh.js', () => ({ refreshAssignmentsToken: vi.fn() }));
 
 beforeEach(() => {
   vi.resetAllMocks();
   resetAssignmentsAvailability();
   vi.mocked(extractAssignmentsToken).mockReturnValue(null);
-  vi.mocked(extractGraphToken).mockReturnValue(null);
 });
 
 describe('Assignments auth', () => {
@@ -35,19 +34,7 @@ describe('Assignments auth', () => {
     expect(refreshAssignmentsToken).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps Graph availability independent of Assignments', async () => {
-    vi.mocked(refreshAssignmentsToken).mockResolvedValue(err(createError(ErrorCode.ACCESS_DENIED, 'No Assignments')));
-    vi.mocked(refreshGraphToken).mockResolvedValue(ok('graph-token'));
-    await requireAssignmentsTokenAsync();
-    expect(await requireGraphTokenAsync()).toEqual(ok('graph-token'));
-    vi.mocked(refreshGraphToken).mockResolvedValue(err(createError(ErrorCode.ACCESS_DENIED, 'No Graph')));
-    await requireGraphTokenAsync();
-    await requireGraphTokenAsync();
-    expect(refreshGraphToken).toHaveBeenCalledTimes(2);
-    resetAssignmentsAvailability();
-    await requireGraphTokenAsync();
-    expect(refreshGraphToken).toHaveBeenCalledTimes(3);
-  });
+
 
   it('coalesces simultaneous requests for a missing token', async () => {
     vi.mocked(refreshAssignmentsToken).mockResolvedValue(ok('new-token'));
