@@ -44,9 +44,9 @@ export function setLogLevel(level: LogLevel): void {
  */
 export function redactLogMessage(message: string): string {
   return message
-    .replace(/(Bearer\\s+)[A-Za-z0-9._~+/-]+/gi, '$1[redacted]')
-    .replace(/((?:refresh_token|access_token|id_token|skypetoken(?:_asm)?|authorization)=)[^\\s;&]+/gi, '$1[redacted]')
-    .replace(/(https?:\\/\\/[^\\s?#]+)\\?[^\\s]+/gi, '$1?[redacted]');
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]+/gi, '$1[redacted]')
+    .replace(/((?:refresh_token|access_token|id_token|skypetoken(?:_asm)?|authorization)=)[^\s;&]+/gi, '$1[redacted]')
+    .replace(/(https?:\/\/[^\s?#]+)\?[^\s]+/gi, '$1?[redacted]');
 }
 
 /** Log an error message. Always shown unless level is somehow above error. */
