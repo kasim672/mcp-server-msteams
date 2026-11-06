@@ -250,9 +250,6 @@ export const STANDARD_EMOJIS: readonly StandardEmoji[] = [
 /** OAuth audience of the Teams EDU Assignments service. */
 export const ASSIGNMENTS_APP_ID = '8f348934-64be-4bb2-bc16-c54c96789f43';
 
-/** Microsoft Graph token audiences: MSAL caches either the URL or the app ID. */
-export const GRAPH_AUDIENCES: readonly string[] = ['https://graph.microsoft.com', '00000003-0000-0000-c000-000000000000'];
-
 /**
  * Teams web hosts, in the order a session's origins should be preferred.
  *

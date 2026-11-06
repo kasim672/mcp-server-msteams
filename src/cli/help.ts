@@ -43,7 +43,12 @@ export function renderIndex(tools: Tool[], groups: Array<{ name: string; tools: 
   const column = Math.min(22, Math.max(...[...labels.values()].map(label => label.length)) + 2);
 
   const lines: string[] = [
-    `${bold('msteams')} ${dim(version)} - Microsoft Teams from your terminal`,
+    `${bold('msteams')} ${dim('v' + version)}   Microsoft Teams MCP + CLI`,
+    '',
+    bold('Get started'),
+    '  npm install -g mcp-server-msteams',
+    '  msteams login               Sign in with your existing Teams account',
+    '  msteams status              Check your local session',
     '',
     bold('Usage'),
     '  msteams <command> [value] [--flag value]',
@@ -66,7 +71,8 @@ export function renderIndex(tools: Tool[], groups: Array<{ name: string; tools: 
   lines.push(
     '',
     dim('Commands are tool names without the teams_/get_ prefix; any unambiguous'),
-    dim("abbreviation works (send -> send_message). 'msteams login' first."),
+    dim("abbreviation works (send -> send_message)."),
+    dim('Uninstall: npm uninstall -g mcp-server-msteams'),
   );
   return lines.join('\n');
 }

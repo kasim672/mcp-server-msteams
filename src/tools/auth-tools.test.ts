@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../auth/session-store.js', () => ({
   hasSessionState: vi.fn(() => true),
+  CONFIG_DIR: '/nonexistent/msteams-test-profile',
   isSessionLikelyExpired: vi.fn(() => false),
   clearAllLocalData: vi.fn(),
 }));

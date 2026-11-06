@@ -21,7 +21,8 @@
  * 6. Write updated session state back to encrypted storage
  */
 
-import { ASSIGNMENTS_APP_ID, GRAPH_AUDIENCES } from '../constants.js';
+
+import { ASSIGNMENTS_APP_ID } from '../constants.js';
 import {
   readSessionState,
   writeSessionState,
@@ -112,19 +113,14 @@ const AUTHSVC_ENDPOINT = 'https://authsvc.teams.microsoft.com/v1.0/authz';
 /** Resource key used by the on-demand Assignments refresh. */
 const ASSIGNMENTS_RESOURCE = 'EduAssignments';
 
-/** Resource key used by the on-demand Microsoft Graph refresh. */
-const GRAPH_RESOURCE = 'MicrosoftGraph';
-
 /** Optional resources requested only when a tool needs them. */
-export type OnDemandResource = 'assignments' | 'graph';
+export type OnDemandResource = 'assignments';
 
 /**
- * Optional resources are cached by JWT audience rather than MSAL target, because
- * Graph and Assignments grant overlapping bare permission names.
+ * Optional resources are selected by JWT audience rather than MSAL target.
  */
 const ON_DEMAND_AUDIENCES: Record<string, readonly string[]> = {
   [ASSIGNMENTS_RESOURCE]: [ASSIGNMENTS_APP_ID],
-  [GRAPH_RESOURCE]: GRAPH_AUDIENCES,
 };
 
 /** Core scopes are refreshed together; optional resources only on demand. */
@@ -147,21 +143,13 @@ const REFRESH_SCOPES: ReadonlyArray<{ resource: string; scopes: string; onDemand
   {
     /**
      * EDU Assignments API (assignments.edu.cloud.microsoft, backed by OneNote EDU).
-     * Use the app GUID to request a token. Cache selection checks the audience,
-     * since Graph grants similarly named EduAssignments permissions.
+     * Use the app GUID to request a token. Cache selection checks the audience.
      */
     resource: ASSIGNMENTS_RESOURCE,
     scopes: `${ASSIGNMENTS_APP_ID}/.default offline_access`,
     // EDU access may be unavailable even when the core Teams session is valid.
     onDemand: 'assignments',
     label: 'Assignments',
-  },
-  {
-    /** Microsoft Graph, used to download files such as assignment attachments. */
-    resource: GRAPH_RESOURCE,
-    scopes: 'https://graph.microsoft.com/.default offline_access',
-    onDemand: 'graph',
-    label: 'Microsoft Graph',
   },
 ];
 
@@ -435,7 +423,7 @@ function updateAccessTokenInCache(
   tokenResponse: TokenResponse,
   cacheInfo: MsalCacheInfo,
 ): void {
-  // Qualify Assignments scopes: Graph can return the same bare permission names
+  // Qualify Assignments scopes to avoid confusing tokens from different audiences
   // for the same account/client, but a different audience.
   const target = resource === ASSIGNMENTS_RESOURCE
     ? tokenResponse.scope.split(/\s+/).filter(Boolean).map(scope => scope.includes('/') ? scope : `${ASSIGNMENTS_APP_ID}/${scope}`).join(' ')

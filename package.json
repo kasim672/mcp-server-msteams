@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-msteams",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Microsoft Teams MCP Server with Assignment Automation, file attachments, and turn-in capabilities",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "scripts"
   ],
   "repository": {
     "type": "git",
@@ -35,7 +36,9 @@
     "cli": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix"
+    "lint:fix": "eslint src/ --fix",
+    "setup:global": "npm install --global mcp-server-msteams",
+    "remove:global": "npm uninstall --global mcp-server-msteams"
   },
   "keywords": [
     "mcp",

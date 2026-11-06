@@ -3,6 +3,8 @@
  */
 
 import { createRequire } from 'module';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { z } from 'zod';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { RegisteredTool, ToolResult } from './index.js';
@@ -11,6 +13,7 @@ const require = createRequire(import.meta.url);
 const pkg = require('../../package.json') as { version: string };
 import {
   hasSessionState,
+  CONFIG_DIR,
   isSessionLikelyExpired,
   clearAllLocalData,
 } from '../auth/session-store.js';
@@ -128,9 +131,33 @@ async function handleLogin(
     };
   }
 
-  // Headless-first strategy:
-  // The persistent browser profile retains Microsoft's long-lived session cookies,
-  // so headless SSO can succeed even without a session-state file.
+  // Reuse the existing Teams MSAL refresh token over HTTPS before paying the
+  // cost of launching any browser. No separate Azure app is configured.
+  if (hasSessionState()) {
+    const refreshed = await refreshTokensViaHttp();
+    const freshStatus = getSubstrateTokenStatus();
+    if (refreshed.ok && freshStatus.hasToken &&
+        (freshStatus.minutesRemaining ?? 0) >= TOKEN_VALID_THRESHOLD_MINUTES) {
+      return {
+        success: true,
+        data: {
+          message: 'Teams session refreshed silently without launching a browser.',
+          tokenStatus: {
+            expiresAt: freshStatus.expiresAt,
+            minutesRemaining: freshStatus.minutesRemaining,
+          },
+        },
+      };
+    }
+  }
+
+  // On the first login there is no browser profile to reuse. Skip the
+  // headless attempt and go straight to the interactive sign-in.
+  const hasProfile = ['browser-profile', 'browser-profile-firefox']
+    .some(name => fs.existsSync(path.join(CONFIG_DIR, name)));
+  if (!hasProfile) return loginInVisibleBrowser();
+
+  // Headless fallback only when a previously authenticated profile exists.
   const headless = await createBrowserContext({ headless: true });
   try {
     await ensureAuthenticated(
