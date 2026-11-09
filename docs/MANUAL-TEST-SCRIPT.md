@@ -62,7 +62,7 @@ This is a test script for verifying all MCP tools work correctly before release.
 | Tool | Purpose |
 |------|---------|
 | `teams_get_shared_files` | Get files/links shared in a conversation (channels, chats, meetings) |
-| `teams_download_file` | Download a shared file's webUrl or an assignment attachment's fileUrl to a local path |
+| `teams_download_file` | Download a SharePoint HTTPS webUrl to a local path with the Teams browser |
 
 ### Calendar & Meetings
 | Tool | Purpose |
@@ -224,7 +224,7 @@ Quick reactions: `like` (👍), `heart` (❤️), `laugh` (😂), `surprised` (�
 1. teams_list_assignments → active work, earliest due first
 2. teams_list_assignments nextLink="..." → next page; statusFilter comes from the link
 3. teams_get_assignment classId="..." assignmentId="..." → full detail and your submission
-4. teams_download_file url="<an attachment's fileUrl>" outputPath="/tmp/lesson.pptx" → saved file with size and SHA-256
+4. For an assignment attachment with a Graph drive-item fileUrl, open the attachment in Teams manually; the Graph-free downloader does not accept this URL.
 5. Repeat step 4 with the same outputPath → must fail (never overwrites)
 6. teams_submission_action action="view" classId="..." assignmentId="..." submissionId="..." → mark viewed
 ```

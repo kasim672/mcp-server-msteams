@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { error, warn, info, debug, setLogLevel } from './logger.js';
+import { error, warn, info, debug, setLogLevel, redactLogMessage } from './logger.js';
 
 describe('logger', () => {
   let consoleSpy: {
@@ -152,5 +152,22 @@ describe('logger', () => {
       expect(consoleSpy.log).not.toHaveBeenCalled();
       expect(consoleSpy.debug).not.toHaveBeenCalled();
     });
+  });
+});
+
+
+describe('credential-safe diagnostics', () => {
+  it('redacts bearer tokens and token parameters', () => {
+    const output = redactLogMessage('Bearer secret.jwt-token refresh_token=my-secret&access_token=another-secret');
+    expect(output).not.toContain('secret.jwt-token');
+    expect(output).not.toContain('my-secret');
+    expect(output).not.toContain('another-secret');
+    expect(output).toContain('[redacted]');
+  });
+
+  it('removes the query string from a URL without hiding its host', () => {
+    const output = redactLogMessage('GET https://teams.microsoft.com/v2/?code=private&state=private2');
+    expect(output).toContain('https://teams.microsoft.com/v2/?[redacted]');
+    expect(output).not.toContain('private');
   });
 });

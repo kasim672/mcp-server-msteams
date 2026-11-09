@@ -470,14 +470,28 @@ export async function actOnSubmission(
   }
   let status = response.value.data?.status;
   if (action !== 'view') {
-    const verification = await httpRequest<RawSubmission>(
-      ASSIGNMENTS_API.submission(classId, assignmentId, submissionId),
-      { method: 'GET', headers: getAssignmentsHeaders(tokenResult.value) },
-    );
-    if (!verification.ok) handleAssignmentsError(verification, tokenResult.value);
-    status = verification.ok ? verification.value.data?.status : undefined;
+    // The service may update submission state asynchronously. Poll GET only;
+    // never repeat the mutation POST, including on network timeouts.
     const expected = action === 'submit' ? 'submitted' : 'working';
-    if (!verification.ok || verification.value.data?.id !== submissionId || status !== expected) {
+    let confirmed = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      const verification = await httpRequest<RawSubmission>(
+        ASSIGNMENTS_API.submission(classId, assignmentId, submissionId),
+        { method: 'GET', headers: getAssignmentsHeaders(tokenResult.value), maxRetries: 1 },
+      );
+      if (!verification.ok) {
+        handleAssignmentsError(verification, tokenResult.value);
+        break;
+      }
+      if (verification.value.data?.id !== submissionId) break;
+      status = verification.value.data?.status;
+      if (status === expected) {
+        confirmed = true;
+        break;
+      }
+    }
+    if (!confirmed) {
       return err(createError(ErrorCode.API_ERROR,
         `The ${action} request was accepted, but submission state could not be confirmed as ${expected}. Check the submission before repeating the action.`,
         { retryable: false, suggestions: ['Read the assignment to check the current submission state; do not automatically repeat the action'] }));

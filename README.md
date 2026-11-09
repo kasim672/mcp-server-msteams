@@ -6,7 +6,6 @@
 
 **Direct AI Assistant Integration, EDU Assignment Automation &amp; Standalone CLI for Microsoft Teams**
 
-[![CI](https://github.com/kasim672/mcp-server-msteams/actions/workflows/ci.yml/badge.svg)](https://github.com/kasim672/mcp-server-msteams/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/mcp-server-msteams.svg)](https://www.npmjs.com/package/mcp-server-msteams)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
@@ -15,7 +14,7 @@
 
 <br/>
 
-<img src="assets/features-overview.svg" alt="Feature Overview" width="100%" />
+<img src="assets/features-overview.svg" alt="Local-first Teams MCP workflow, assistant integration, and privacy" width="100%" />
 
 </div>
 
@@ -54,16 +53,35 @@
 
 ### Why Choose `mcp-server-msteams`?
 
-- 🚀 **Zero Azure Setup**: No Azure App Registrations, no IT admin consent, and no Graph API portal configuration required. Sign in using your existing standard Teams credentials.
-- ⚡ **Silent 1-Second HTTP Refresh**: Automatically mints and refreshes MSAL OAuth tokens via fast HTTPS endpoints in the background. The browser only opens for the initial login or if session cookies completely expire.
-- 🎓 **First-Class EDU Assignments**: Automate listing coursework, reading rubrics, downloading assignment files, attaching local submissions (`.pdf`, `.docx`, `.zip`), and executing turn-in / unsubmit actions.
+- **No Azure app registration:** Use the Teams sign-in you already know. There is no separate Graph permission prompt or Azure application setup.
+- **HTTP-first token refresh:** Prefer direct Teams session refresh before launching Playwright when credentials already exist.
+- **EDU Assignments:** List coursework, read instructions, attach files, and verify the submitted state; check exact attachments manually for important work.
 - 🐧 **Full Linux &amp; Windows Parity**: Native cross-platform engine auto-detects Google Chrome, Brave, Microsoft Edge, and Chromium across distributions without hardcoded `.exe` or OS paths.
-- 🛡️ **End-to-End Local Security**: Session tokens are encrypted on disk with **AES-256-GCM** using machine-derived cryptographic keys. Your credentials never touch third-party servers.
+- **Local privacy:** Session-state files use AES-256-GCM with a random per-install key. The key and browser cookies remain in your OS account, so protect your local profile.
 - 🛠️ **Dual Interface**: Includes both an **MCP stdio server** for AI clients and the standalone **`msteams` CLI** for bash/zsh/PowerShell scripts.
 
 ---
 
 ## Quick Start
+
+**npm-only installation** (no Git clone, Azure CLI, or app registration):
+
+```powershell
+npm install --global mcp-server-msteams
+msteams login
+msteams status
+```
+
+Uninstall:
+
+```powershell
+npm uninstall --global mcp-server-msteams
+```
+
+Source checkouts also provide `scripts/install.ps1`, `scripts/uninstall.ps1`, `scripts/install.cmd`, `scripts/uninstall.cmd`, `scripts/install.sh`, and `scripts/uninstall.sh`. See [Uninstall and erase local sessions](#uninstall-and-erase-local-sessions).
+
+**Publishing note:** The updated version 1.0.6 must be published to npm separately before npm commands install these new changes.
+
 
 ### 1. Configure in AI MCP Clients
 
@@ -168,7 +186,7 @@ npx -y -p mcp-server-msteams msteams assignments --status active
    - **ChatSvc (`chatsvcagg.teams.microsoft.com`)**: Real-time messaging, channels, direct chats, reactions.
    - **Substrate (`substrate.office.com`)**: Microsoft 365 natural language search, Outlook emails, people graph.
    - **Assignments (`assignments.edu.cloud.microsoft`)**: Coursework data, submission deadlines, rubrics.
-   - **Graph API (`graph.microsoft.com`)**: OneDrive files, SharePoint document libraries, meeting transcripts.
+   - **SharePoint downloads:** Uses the existing local browser session for supported HTTPS SharePoint web links. No Graph token is requested.
 
 ---
 
@@ -231,7 +249,7 @@ The server exposes **30+ tools** to AI agents via MCP, each available as a direc
 | MCP Tool Name | CLI Command | Parameters | Description |
 | :--- | :--- | :--- | :--- |
 | `teams_get_shared_files` | `msteams shared_files` | `--conversationId <id> [--pageSize <n>] [--skipToken <token>]` *(alias: `--to`)* | List files and links shared within a conversation with download URLs. |
-| `teams_download_file` | `msteams download_file` | `--url <url> --outputPath <path>` | Securely download SharePoint, OneDrive, or assignment files to local disk. |
+| `teams_download_file` | `msteams download_file` | `--url <url> --outputPath <path>` | Download supported SharePoint web URLs with Playwright; Graph drive-item URLs are unsupported. |
 | `teams_get_meetings` | `msteams meetings` | `[--startDate <iso>] [--endDate <iso>] [--limit <n>]` | Retrieve upcoming and past calendar events and Teams meetings. |
 | `teams_get_transcript` | `msteams transcript` | `--threadId <id> [--meetingDate <iso>]` | Download automated meeting transcripts with speaker timestamps. |
 | `teams_get_tags` | `msteams tags` | `--teamId <id> [--query <text>]` | Get channel tags for a Teams team (used for `@mention` tags). |
@@ -267,7 +285,7 @@ msteams assignments --status active
 ```bash
 msteams assignment --classId "19:abc...tacx" --assignmentId "a8f3b..."
 ```
-*Returns teacher rubrics, point scales, and resource download URLs. Use `msteams download_file` to fetch reference slides or templates.*
+*Returns assignment details and resource links. For downloads, only HTTPS SharePoint web URLs are supported; Graph drive-item links must be opened in Teams.*
 
 ### Step 3: Attach Local Submission File
 ```bash
@@ -278,7 +296,7 @@ msteams attach_file \
   --filePath "/path/to/report.pdf" \
   --turnIn
 ```
-*Playwright launches headless Chromium, navigates directly to the student portal, uploads the file, verifies the attachment DOM element, and triggers the Turn In button.*
+*Playwright waits for the file name to appear, then uses the Assignments API to verify turn-in state. Pass both `--classId` and `--assignmentId` with `--turnIn`. Filename presence alone is not definitive proof of the exact attachment; check Teams before relying on graded work.*
 
 ### Step 4: Undo Turn-In or Remove Attachment (If needed)
 ```bash
@@ -423,10 +441,40 @@ npm run lint
 
 ---
 
+## Uninstall and erase local sessions
+
+`npm uninstall --global mcp-server-msteams` removes the package, but **preserves the local Teams session**. To remove your cached credentials and persistent browser profile as well, from a source checkout:
+
+```powershell
+# PowerShell: uninstall and erase local credentials
+.\\scripts\\uninstall.ps1 -PurgeSession
+```
+
+```cmd
+REM CMD: uninstall only (retains the session)
+scripts\\uninstall.cmd
+```
+
+```sh
+# Linux/macOS: uninstall and erase local credentials
+sh scripts/uninstall.sh --purge-session
+```
+
+Windows session directory: `%APPDATA%\\teams-mcp-server`. Unix: `~/.teams-mcp-server`. Remove the MCP entry from your AI assistant's configuration separately; npm cannot edit every client's settings.
+
+## Privacy and limitations
+
+- No Microsoft Graph API, Graph-token exchange, separate Azure app registration, or Azure CLI is used. Teams still relies on Microsoft's normal sign-in service.
+- Session-state files and the browser profile are local. Requests still go to Microsoft, and AI assistants may transmit tool outputs to their model provider under the assistant's own privacy policy.
+- `teams_download_file` now uses a signed-in browser to download **SharePoint HTTPS links only**. Some SharePoint viewers still need a manual download. Graph-style education attachment `fileUrl` values are not supported.
+- Existing GitHub Actions configuration was not expanded, and no new MCP capabilities were added.
+
+---
+
 ## Security &amp; Encryption
 
 - **No Third-Party Relays**: Every API request communicates directly from your machine to Microsoft's official cloud endpoints (`*.microsoft.com`, `*.office.com`).
-- **Encrypted Local Storage**: Cached tokens and session states are encrypted with **AES-256-GCM** using local machine salt and hardware-derived keys.
+- **Encrypted Local Storage**: Cached session-state files use AES-256-GCM and a random local `session.key`, not a hostname-based key. Both the key and browser profile stay in the user directory; this is not hardware-backed protection. Version-1 encrypted files are still readable for migration.
 - **Owner-Only File Permissions**: On Linux and macOS, the session directory is created with `0o700` (`rwx------`) and files with `0o600` (`rw-------`).
 - **No Credential Escalation**: The server operates strictly within the permissions of your logged-in Microsoft Teams account.
 

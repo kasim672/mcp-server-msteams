@@ -40,7 +40,6 @@ describe('resolveBrowserDetailsFromPath', () => {
   });
 
   it('correctly maps Opera and Vivaldi', () => {
-    const opera = resolveBrowserDetailsFromPath('C:\\Users\\user\\AppData\\Local\\Programs\\Opera\\launcher.exe');
     // filename is launcher.exe, basename is launcher
     const operaExe = resolveBrowserDetailsFromPath('C:\\Programs\\Opera\\opera.exe');
     expect(operaExe.name).toBe('Opera');

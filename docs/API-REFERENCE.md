@@ -32,7 +32,6 @@ Teams uses multiple authentication mechanisms depending on the API surface:
 | **Bearer (Spaces)** | `Authorization: Bearer {spacesToken}` | MSAL, `api.spaces.skype.com` audience | Calendar/Meetings |
 | **Skype Token** | `Authentication: skypetoken={token}` | Cookie `skypetoken_asm` | Messaging, Threads, Calendar |
 | **Bearer (Substrate + Prefer)** | `Authorization: Bearer {token}` + `Prefer` header | Same as Substrate search token | Transcripts (WorkingSetFiles) |
-| **Bearer (Graph)** | `Authorization: Bearer {token}` | MSAL, audience `https://graph.microsoft.com` (requested on demand) | File downloads (shared files, assignment attachments) |
 | **Bearer (Assignments)** | `Authorization: Bearer {token}` + `MS-Int-AppID: assignments-ui` | MSAL, audience `8f348934-64be-4bb2-bc16-c54c96789f43` (requested on demand) | EDU Assignments |
 
 ### Required Headers
@@ -118,7 +117,7 @@ grant_type=refresh_token
 | `https://api.spaces.skype.com/.default offline_access` | Calendar, Meetings + skypetoken_asm derivation |
 | `https://chatsvcagg.teams.microsoft.com/.default offline_access` | Favorites, Teams list (CSA) |
 
-These three are refreshed together. The EDU Assignments scope (`8f348934-64be-4bb2-bc16-c54c96789f43/.default offline_access`) and the Microsoft Graph scope (`https://graph.microsoft.com/.default offline_access`) are **not** part of that set: each is requested separately, only when a tool needs it. See [Assignments (EDU)](#assignments-edu).
+These three are refreshed together. The EDU Assignments scope (`8f348934-64be-4bb2-bc16-c54c96789f43/.default offline_access`) is **not** part of that set: it is requested separately, only when an Assignments tool needs it. See [Assignments (EDU)](#assignments-edu).
 
 Azure AD may rotate the refresh token on each use — always store the new `refresh_token` from the response.
 
@@ -1856,21 +1855,13 @@ The `TranscriptJson` field is a JSON string containing the full transcript:
 }
 ```
 
-### Downloading a File (Microsoft Graph)
+### Downloading a SharePoint file through the local browser
 
-One flow serves both shared files and assignment attachments, as the Assignments web client does. The Graph token is only ever sent to `graph.microsoft.com`.
+The existing `teams_download_file` tool uses the signed-in Playwright browser profile and accepts trusted HTTPS SharePoint `webUrl` links from `teams_get_shared_files`. It waits for a browser download and copies the resulting file to an absolute local path without overwriting an existing file. A SHA-256 hash is returned.
 
-1. **Resolve to a drive item.**
-   - A Graph drive-item URL (`https://graph.microsoft.com/v1.0/drives/{driveId}/items/{itemId}`, an assignment `fileUrl`) is used as-is.
-   - A SharePoint/OneDrive web URL (a shared file's `webUrl`) goes through the shares API: `https://graph.microsoft.com/v1.0/shares/u!{base64url(webUrl)}/driveItem`. Verified live for OneDrive chat uploads (`-my.sharepoint.com/personal/…`), team-site file paths (`/sites/…`), and `/_layouts/15/Doc.aspx` viewer links.
-2. **Get the download link.**
-   ```
-   GET {driveItemUrl}?$select=name,size,file,currentUserRole,content.downloadUrl
-   Authorization: Bearer {graphToken}
-   ```
-3. **Download.** `@microsoft.graph.downloadUrl` is a short-lived, pre-authenticated SharePoint link (`/_layouts/15/download.aspx?…&tempauth=…`). Fetch it with **no** Authorization header. `currentUserRole.blocksDownload` is `true` when the owner has blocked downloads. `GET {driveItemUrl}/content` also works (302 to the same link).
+Some SharePoint viewers require interactive steps not supported by the automation; in that case the command returns an error and the user should open the file in Teams manually.
 
-**Token:** the Teams client (`5e3ce6c0-…`) holds Graph `Files.ReadWrite.All`/`Sites.ReadWrite.All`. Teams web caches it (audience `https://graph.microsoft.com` or `00000003-0000-0000-c000-000000000000`), and the refresh-token grant with scope `https://graph.microsoft.com/.default offline_access` renews it. It is optional: fetched on demand and never allowed to trigger re-login.
+Graph drive-item URLs, including many education attachment `fileUrl` fields, are intentionally unsupported. This build does not request or use a Graph token, Graph API, or an extra Azure app registration.
 
 ---
 
@@ -1934,7 +1925,7 @@ Word, PowerPoint, File and Form resources are verified live; Excel and Link foll
 
 On assignment resources, `distributeForStudentWork: true` means each student gets a personal copy, which appears in their submission's `resources`. `submittedResources` holds the files as last turned in.
 
-Download attachments with the Graph flow in [Downloading a File](#downloading-a-file-microsoft-graph).
+For attachments with Graph drive-item URLs, open the file in Teams; the browser-only downloader cannot accept those URLs.
 
 ### Submission Actions
 

@@ -15,7 +15,7 @@ import {
   type SessionState,
 } from './session-store.js';
 import { parseJwtProfile, type UserProfile } from '../utils/parsers.js';
-import { MRI_TYPE_PREFIX, ORGID_PREFIX, MRI_ORGID_PREFIX, ASSIGNMENTS_APP_ID, GRAPH_AUDIENCES } from '../constants.js';
+import { MRI_TYPE_PREFIX, ORGID_PREFIX, MRI_ORGID_PREFIX, ASSIGNMENTS_APP_ID } from '../constants.js';
 
 // ============================================================================
 // JWT Utilities
@@ -165,7 +165,7 @@ export function getSubstrateTokenStatus(): {
 }
 
 // ============================================================================
-// Optional Tokens (EDU Assignments, Microsoft Graph)
+// Optional Tokens (EDU Assignments)
 // ============================================================================
 
 /**
@@ -173,19 +173,10 @@ export function getSubstrateTokenStatus(): {
  *
  * This token authenticates calls to `assignments.edu.cloud.microsoft`. It is
  * minted on demand by HTTP token refresh and stored in the MSAL cache.
- * Select AccessToken entries by the JWT audience, since Microsoft Graph uses
- * the same EduAssignments permission names for a different resource.
+ * Select AccessToken entries by the JWT audience.
  */
 export function extractAssignmentsToken(state?: SessionState): SubstrateTokenInfo | null {
   return extractTokenByAudience([ASSIGNMENTS_APP_ID], state);
-}
-
-/**
- * Extracts a Microsoft Graph token from session state. Teams web caches one for
- * its own client; the on-demand refresh (`refreshTokensViaHttp('graph')`) renews it.
- */
-export function extractGraphToken(state?: SessionState): SubstrateTokenInfo | null {
-  return extractTokenByAudience(GRAPH_AUDIENCES, state);
 }
 
 /** Longest-lived unexpired AccessToken whose JWT audience is one of `audiences`. */
@@ -216,11 +207,6 @@ export function invalidateAccessToken(token: string): void {
  */
 export function getValidAssignmentsToken(): string | null {
   return extractAssignmentsToken()?.token ?? null;
-}
-
-/** Gets a valid Microsoft Graph token from the session, or null. */
-export function getValidGraphToken(): string | null {
-  return extractGraphToken()?.token ?? null;
 }
 
 /**

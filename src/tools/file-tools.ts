@@ -1,6 +1,6 @@
 /**
  * File-related tool handlers: list files shared in a conversation, and
- * download a file (shared file or assignment attachment) via Microsoft Graph.
+ * download a SharePoint file using the authenticated local Teams browser.
  */
 
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { RegisteredTool, ToolResult } from './index.js';
 import { handleApiResult } from './index.js';
 import { getSharedFiles } from '../api/files-api.js';
-import { downloadFile } from '../api/graph-files-api.js';
+import { downloadFile } from '../api/browser-files-api.js';
 import {
   DEFAULT_FILES_PAGE_SIZE,
   MAX_FILES_PAGE_SIZE,
@@ -89,11 +89,11 @@ export const getSharedFilesTool: RegisteredTool<typeof GetSharedFilesInputSchema
 const downloadFileToolDefinition: Tool = {
   name: 'teams_download_file',
   description:
-    "Download a Teams file to a local path. Accepts the webUrl of a File item from teams_get_shared_files (SharePoint/OneDrive: chat uploads and channel files, including Doc.aspx viewer links), or the fileUrl of an assignment attachment or submission file from teams_get_assignment (a Microsoft Graph drive-item URL). Link items, Microsoft Forms and non-SharePoint URLs are not files and cannot be downloaded. Saves the raw file to an absolute path on the MCP server machine and returns its name, size, content type and SHA-256. The parent directory must exist and existing files are never overwritten. Streams to disk with no size limit; a transfer that stalls for 30 seconds is cancelled and the partial file removed. Respects the owner's download block. Uses Microsoft Graph via the existing Teams session (no extra sign-in); if Graph is unavailable only this tool fails, and no other Teams tool is affected.",
+    "Download a file shared through Teams from a trusted HTTPS SharePoint webUrl, using the existing signed-in local browser. No Graph token or Azure app setup is involved. Accepts a SharePoint URL from teams_get_shared_files; Graph drive-item URLs returned for some education attachments cannot be downloaded by this browser-only tool. This operation saves to an absolute path on the local MCP machine, never overwrites an existing file, and returns name, size and SHA-256. Some SharePoint viewer layouts do not expose a usable download action to Playwright; in that case open the SharePoint link manually.",
   inputSchema: {
     type: 'object',
     properties: {
-      url: { type: 'string', description: "A File item's webUrl from teams_get_shared_files, or an attachment's fileUrl from teams_get_assignment." },
+      url: { type: 'string', description: "An HTTPS SharePoint webUrl from teams_get_shared_files (not a Graph API URL)." },
       outputPath: { type: 'string', description: 'Absolute destination file path on the MCP server machine. Must not already exist; the parent directory must exist.' },
     },
     required: ['url', 'outputPath'],

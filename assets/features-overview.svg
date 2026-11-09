@@ -1,55 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" width="100%" height="100%">
-  <defs>
-    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#181825"/>
-      <stop offset="100%" stop-color="#11111b"/>
-    </linearGradient>
-    <filter id="fShadow" x="-5%" y="-5%" width="110%" height="110%">
-      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
-    </filter>
-  </defs>
-
-  <rect width="920" height="260" fill="#0b0f19" rx="16"/>
-
-  <!-- Card 1 -->
-  <g transform="translate(24, 20)" filter="url(#fShadow)">
-    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#6366f1" stroke-width="1.2"/>
-    <circle cx="44" cy="44" r="20" fill="#312e81"/>
-    <text x="44" y="50" fill="#a5b4fc" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F512;</text>
-    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">Zero Azure Config</text>
-    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
-      <tspan x="24" dy="0">&#x2022; No IT admin consent or Azure portal setup.</tspan>
-      <tspan x="24" dy="20">&#x2022; Standard Microsoft Teams login credentials.</tspan>
-      <tspan x="24" dy="20">&#x2022; Silent HTTP 1s OAuth token refresh daemon.</tspan>
-      <tspan x="24" dy="20">&#x2022; Local AES-256-GCM encrypted session.</tspan>
-    </text>
-  </g>
-
-  <!-- Card 2 -->
-  <g transform="translate(324, 20)" filter="url(#fShadow)">
-    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#06b6d4" stroke-width="1.2"/>
-    <circle cx="44" cy="44" r="20" fill="#083344"/>
-    <text x="44" y="50" fill="#67e8f9" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F393;</text>
-    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">EDU Assignments</text>
-    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
-      <tspan x="24" dy="0">&#x2022; List active, pending &amp; past assignments.</tspan>
-      <tspan x="24" dy="20">&#x2022; Download assignment briefs and resources.</tspan>
-      <tspan x="24" dy="20">&#x2022; Playwright headless file attachment upload.</tspan>
-      <tspan x="24" dy="20">&#x2022; Automated turn-in &amp; unsubmit support.</tspan>
-    </text>
-  </g>
-
-  <!-- Card 3 -->
-  <g transform="translate(624, 20)" filter="url(#fShadow)">
-    <rect width="272" height="220" fill="url(#cardBg)" rx="12" stroke="#10b981" stroke-width="1.2"/>
-    <circle cx="44" cy="44" r="20" fill="#064e3b"/>
-    <text x="44" y="50" fill="#6ee7b7" font-family="system-ui" font-size="18" text-anchor="middle">&#x1F427;</text>
-    <text x="76" y="49" fill="#ffffff" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700">Linux &amp; Windows Ready</text>
-    <text x="24" y="95" fill="#94a3b8" font-family="-apple-system, system-ui, sans-serif" font-size="12" line-height="1.5">
-      <tspan x="24" dy="0">&#x2022; Auto-detects Chrome, Brave, Edge &amp; Chromium.</tspan>
-      <tspan x="24" dy="20">&#x2022; Works on Ubuntu, Debian, Fedora, Arch &amp; Win.</tspan>
-      <tspan x="24" dy="20">&#x2022; Single binary MCP Server &amp; CLI bundled.</tspan>
-      <tspan x="24" dy="20">&#x2022; 100% test coverage (559/559 passing).</tspan>
-    </text>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 960 344" role="img" aria-labelledby="title desc">
+<title id="title">Microsoft Teams MCP — local-first workflow</title>
+<desc id="desc">Three feature panels showing familiar Teams browser sign-in, existing MCP and CLI tools, and local control. No Azure application registration. npm install and uninstall commands shown below.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111a31"/><stop offset="0.53" stop-color="#0b1122"/><stop offset="1" stop-color="#14122d"/></linearGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8b8af8"/><stop offset="1" stop-color="#43d7c4"/></linearGradient>
+  <linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1b2843"/><stop offset="1" stop-color="#101b30"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="30"/></filter>
+</defs>
+<rect width="960" height="344" rx="22" fill="url(#bg)"/>
+<circle cx="910" cy="12" r="135" fill="#483a96" opacity=".18" filter="url(#glow)"/>
+<circle cx="60" cy="328" r="98" fill="#0d9c8b" opacity=".17" filter="url(#glow)"/>
+<rect x=".6" y=".6" width="958.8" height="342.8" rx="21.5" stroke="#344463" fill="none"/>
+<text x="32" y="45" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="750" fill="#f8faff">Built for your everyday Teams workflow</text>
+<text x="32" y="68" font-family="system-ui,Segoe UI,sans-serif" font-size="12.5" fill="#acb9d1">Direct AI assistant connection · Local browser sign-in · No Azure app registration</text>
+<rect x="32" y="93" width="286" height="171" rx="14" fill="url(#card)" stroke="#5458a6"/>
+<rect x="336" y="93" width="286" height="171" rx="14" fill="url(#card)" stroke="#268d9b"/>
+<rect x="640" y="93" width="288" height="171" rx="14" fill="url(#card)" stroke="#35877c"/>
+<g stroke="#afaaff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="53" y="114" width="32" height="25" rx="5"/><path d="M55 122h28 M63 134l5-5 5 5"/></g>
+<text x="97" y="131" font-family="system-ui,Segoe UI,sans-serif" font-size="16" font-weight="700" fill="#f4f4ff">Sign in once</text>
+<text x="52" y="163" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Existing Teams browser sign-in</text>
+<text x="52" y="186" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Refresh sessions when possible</text>
+<text x="52" y="209" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">No separate Azure app setup</text>
+<rect x="52" y="231" width="140" height="22" rx="11" fill="#343665"/><text x="64" y="246" font-family="system-ui,Segoe UI,sans-serif" font-size="10.5" font-weight="650" fill="#cecfff">PLAYWRIGHT + HTTP</text>
+<g stroke="#5be3e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="358" y="114" width="34" height="25" rx="5"/><path d="m365 121 6 5-6 5 m13 0h8"/></g>
+<text x="402" y="131" font-family="system-ui,Segoe UI,sans-serif" font-size="16" font-weight="700" fill="#f4f4ff">MCP and terminal</text>
+<text x="356" y="163" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Connect AI assistants through stdio</text>
+<text x="356" y="186" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Chats, search and coursework</text>
+<text x="356" y="209" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Same tools in the msteams CLI</text>
+<rect x="356" y="231" width="116" height="22" rx="11" fill="#16434d"/><text x="368" y="246" font-family="system-ui,Segoe UI,sans-serif" font-size="10.5" font-weight="650" fill="#8ef4ef">LOCAL STDIO</text>
+<g stroke="#8de3c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M682 113 700 119v13c0 11-8 17-18 21-10-4-18-10-18-21v-13z" transform="translate(-5,-2) scale(.78)"/><path d="m666 124 5 5 10-11"/></g>
+<text x="702" y="131" font-family="system-ui,Segoe UI,sans-serif" font-size="16" font-weight="700" fill="#f4f4ff">Stay in control</text>
+<text x="660" y="163" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Data and session stored locally</text>
+<text x="660" y="186" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Review actions before turn-in</text>
+<text x="660" y="209" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c7d2e4">Simple setup and removal</text>
+<rect x="660" y="231" width="123" height="22" rx="11" fill="#1c4744"/><text x="673" y="246" font-family="system-ui,Segoe UI,sans-serif" font-size="10.5" font-weight="650" fill="#a6e5c8">YOUR ACCOUNT</text>
+<rect x="32" y="283" width="896" height="39" rx="11" fill="#090f1f" stroke="#2c3d55"/>
+<circle cx="56" cy="302.5" r="5" fill="#54d9bb"/>
+<text x="72" y="307" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="12" fill="#d8eeff">npm install -g mcp-server-msteams</text>
+<path d="M497 293v19" stroke="#344464"/>
+<circle cx="523" cy="302.5" r="5" fill="#ad97ff"/>
+<text x="539" y="307" font-family="ui-monospace,SFMono-Regular,Consolas,monospace" font-size="12" fill="#d8eeff">npm uninstall -g mcp-server-msteams</text>
 </svg>
